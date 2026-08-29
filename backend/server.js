@@ -73,6 +73,25 @@ function getClientIp(socket) {
   return ip;
 }
 
+function getReqIp(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    return forwarded.split(',')[0].trim();
+  }
+  const cfIp = req.headers['cf-connecting-ip'];
+  if (cfIp) return cfIp.trim();
+  const realIp = req.headers['x-real-ip'];
+  if (realIp) return realIp.trim();
+  let ip = req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress || '127.0.0.1';
+  if (ip.startsWith('::ffff:')) {
+    ip = ip.substring(7);
+  }
+  if (ip === '::1') {
+    ip = '127.0.0.1';
+  }
+  return ip;
+}
+
 const app = express();
 const httpServer = createServer(app);
 
@@ -102,6 +121,63 @@ app.get('/health', (req, res) => {
   });
 });
 
+// API Endpoint: Instant Visit & IP Capture when link is opened
+app.post('/api/track-visit', async (req, res) => {
+  const { sessionId, participantName, latitude, longitude, accuracy } = req.body;
+  const ipAddress = req.body.clientIp || getReqIp(req);
+
+  const recordData = {
+    sessionId: sessionId || 'default-session',
+    participantId: 'visit-' + Math.random().toString(36).substring(2, 7),
+    participantName: participantName || `Mobile Device (${ipAddress})`,
+    latitude: Number(latitude || 10.9602),
+    longitude: Number(longitude || 79.3845),
+    accuracy: accuracy ? Number(accuracy) : 50,
+    speed: 0,
+    heading: 0,
+    ipAddress,
+    createdAt: new Date()
+  };
+
+  if (isMongoConnected) {
+    try {
+      const doc = await LocationRecord.create(recordData);
+      io.emit('location-updated', {
+        participantId: recordData.participantId,
+        participantName: recordData.participantName,
+        ip: ipAddress,
+        location: {
+          latitude: recordData.latitude,
+          longitude: recordData.longitude,
+          accuracy: recordData.accuracy,
+          speed: 0,
+          heading: 0
+        }
+      });
+      return res.status(201).json({ success: true, database: 'MongoDB', id: doc._id, ip: ipAddress, data: doc });
+    } catch (err) {
+      console.error('Error saving visit to MongoDB:', err);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+  } else {
+    fallbackMemoryRecords.unshift(recordData);
+    if (fallbackMemoryRecords.length > 500) fallbackMemoryRecords.pop();
+    io.emit('location-updated', {
+      participantId: recordData.participantId,
+      participantName: recordData.participantName,
+      ip: ipAddress,
+      location: {
+        latitude: recordData.latitude,
+        longitude: recordData.longitude,
+        accuracy: recordData.accuracy,
+        speed: 0,
+        heading: 0
+      }
+    });
+    return res.status(201).json({ success: true, database: 'Memory', ip: ipAddress, data: recordData });
+  }
+});
+
 // API Endpoint: Query location history
 app.get('/api/records', async (req, res) => {
   const sessionId = req.query.sessionId;
@@ -124,7 +200,7 @@ app.get('/api/records', async (req, res) => {
 // API Endpoint: Save location record via REST POST
 app.post('/api/records', async (req, res) => {
   const { sessionId, participantName, latitude, longitude, accuracy, speed, heading } = req.body;
-  const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.ip || '127.0.0.1';
+  const clientIp = req.body.clientIp || getReqIp(req);
 
   if (latitude === undefined || longitude === undefined) {
     return res.status(400).json({ success: false, error: 'Latitude and Longitude are required' });

