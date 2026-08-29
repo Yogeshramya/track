@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from 'react';
 import io from 'socket.io-client';
 import QRCode from 'qrcode';
 import dynamic from 'next/dynamic';
-import RecipientFeed from './recipient';
 
 const MapView = dynamic(() => import('../components/MapView'), { ssr: false });
 
@@ -15,7 +14,6 @@ export default function Home() {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [sessionId, setSessionId] = useState('');
-  const [isHost, setIsHost] = useState(true);
   const [sessionCreated, setSessionCreated] = useState(false);
 
   // Form states
@@ -35,21 +33,11 @@ export default function Home() {
   });
   const [dbRecords, setDbRecords] = useState([]);
 
-  // Recipient Consent states
-  const [isSharingActive, setIsSharingActive] = useState(false);
-  const [participantName, setParticipantName] = useState('');
-  const [mobCoords, setMobCoords] = useState('Detecting...');
-  const [mobPackets, setMobPackets] = useState(0);
-
   const qrCanvasRef = useRef(null);
-  const watchIdRef = useRef(null);
   const simIntervalRef = useRef(null);
 
   useEffect(() => {
     setIsMounted(true);
-
-    const params = new URLSearchParams(window.location.search);
-    const sid = params.get('session');
 
     const s = io(BACKEND_URL);
     setSocket(s);
@@ -62,16 +50,6 @@ export default function Home() {
     s.on('disconnect', () => {
       setIsConnected(false);
     });
-
-    if (sid) {
-      setIsHost(false);
-      setSessionId(sid);
-      s.emit('join-session', { sessionId: sid }, (res) => {
-        if (res && res.success) {
-          setSessionTitle(res.sessionTitle);
-        }
-      });
-    }
 
     s.on('location-updated', (data) => {
       const { participantId, participantName, ip, location } = data;
@@ -203,85 +181,6 @@ export default function Home() {
     }, 2000);
   };
 
-  const handleGrantLocation = () => {
-    if (!navigator.geolocation) {
-      alert('Geolocation is not supported by your browser.');
-      return;
-    }
-
-    setIsSharingActive(true);
-    let count = 0;
-
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      (pos) => {
-        count++;
-        setMobPackets(count);
-        setMobCoords(`${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`);
-
-        if (socket) {
-          socket.emit('update-location', {
-            sessionId,
-            participantName: participantName || 'Mobile Participant',
-            location: {
-              latitude: pos.coords.latitude,
-              longitude: pos.coords.longitude,
-              accuracy: pos.coords.accuracy,
-              speed: pos.coords.speed,
-              heading: pos.coords.heading
-            }
-          });
-        }
-      },
-      (err) => {
-        console.error('Geolocation error:', err);
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-    );
-  };
-
-  const handleStopSharing = () => {
-    if (watchIdRef.current) {
-      navigator.geolocation.clearWatch(watchIdRef.current);
-    }
-    if (simIntervalRef.current) {
-      clearInterval(simIntervalRef.current);
-    }
-    if (socket) {
-      socket.emit('stop-sharing', { sessionId });
-    }
-    setIsSharingActive(false);
-  };
-
-  const handleRecipientSim = () => {
-    setIsSharingActive(true);
-    let lat = 28.6139;
-    let lng = 77.2090;
-    let count = 0;
-
-    simIntervalRef.current = setInterval(() => {
-      lat += (Math.random() - 0.3) * 0.0003;
-      lng += (Math.random() - 0.2) * 0.0003;
-      count++;
-
-      setMobPackets(count);
-      setMobCoords(`${lat.toFixed(4)}, ${lng.toFixed(4)}`);
-
-      if (socket) {
-        socket.emit('update-location', {
-          sessionId,
-          participantName: participantName || 'Simulated Phone',
-          location: {
-            latitude: lat,
-            longitude: lng,
-            accuracy: 4,
-            speed: 1.8,
-            heading: 45
-          }
-        });
-      }
-    }, 2000);
-  };
-
   if (!isMounted) return null;
 
   return (
@@ -318,7 +217,7 @@ export default function Home() {
         </header>
 
         <div className="feed-container">
-          {/* Instagram Profile Header (Visible to both Host and Recipient) */}
+          {/* Instagram Profile Header */}
           <section className="profile-header">
             <div className="profile-avatar">
               <div className="location-avatar">
@@ -429,34 +328,178 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Recipient & Host Feed Component */}
-          <RecipientFeed
-            isHost={isHost}
-            sessionCreated={sessionCreated}
-            sessionTitle={sessionTitle}
-            setSessionTitle={setSessionTitle}
-            sessionDuration={sessionDuration}
-            setSessionDuration={setSessionDuration}
-            handleCreateSession={handleCreateSession}
-            shareUrl={shareUrl}
-            qrCanvasRef={qrCanvasRef}
-            handleCopyLink={handleCopyLink}
-            whatsappUrl={whatsappUrl}
-            handleNativeShare={handleNativeShare}
-            handleStartHostDemoSim={handleStartHostDemoSim}
-            activeLocations={activeLocations}
-            telemetry={telemetry}
-            dbRecords={dbRecords}
-            backendUrl={BACKEND_URL}
-            isSharingActive={isSharingActive}
-            participantName={participantName}
-            setParticipantName={setParticipantName}
-            handleGrantLocation={handleGrantLocation}
-            handleRecipientSim={handleRecipientSim}
-            mobCoords={mobCoords}
-            mobPackets={mobPackets}
-            handleStopSharing={handleStopSharing}
-          />
+          {/* Host Feed Area */}
+          <div className="host-feed-container">
+            {!sessionCreated ? (
+              /* Create Session Post */
+              <article className="instagram-card">
+                <div className="post-header">
+                  <div className="post-avatar">
+                    <svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
+                  </div>
+                  <div className="post-user">
+                    <strong>LocShare</strong>
+                    <span>Real-Time Location Tracker</span>
+                  </div>
+                </div>
+
+                <div className="location-hero">
+                  <div className="hero-location-icon">
+                    <svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
+                  </div>
+                  <span>LIVE LOCATION STREAM</span>
+                </div>
+
+                <div className="post-body">
+                  <strong>Create Real-Time Mobile Location Link</strong>
+                  <p>Generate a secure shareable link and QR Code for live GPS tracking.</p>
+
+                  <div className="form-grid">
+                    <div className="form-group">
+                      <label>Session Title / Purpose</label>
+                      <input
+                        type="text"
+                        value={sessionTitle}
+                        onChange={(e) => setSessionTitle(e.target.value)}
+                        placeholder="e.g. Delivery / Meetup"
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label>Link Expiration</label>
+                      <select value={sessionDuration} onChange={(e) => setSessionDuration(e.target.value)}>
+                        <option value="15">15 Minutes</option>
+                        <option value="60">1 Hour</option>
+                        <option value="360">6 Hours</option>
+                        <option value="1440">24 Hours</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <button onClick={handleCreateSession} className="instagram-primary-button">
+                    Generate Shareable Link & QR Code
+                  </button>
+                </div>
+              </article>
+            ) : (
+              /* Active Session Cards */
+              <div>
+                {/* QR Code Post */}
+                <article className="instagram-card">
+                  <div className="post-header">
+                    <div className="post-avatar">QR</div>
+                    <div className="post-user">
+                      <strong>LocShare Shareable Link</strong>
+                      <span>Scan with Mobile Phone</span>
+                    </div>
+                  </div>
+
+                  <div className="qr-section">
+                    <h2>Scan with Mobile Phone</h2>
+                    <p>Scan this QR code with any mobile camera or share the link via WhatsApp.</p>
+
+                    <div className="qr-wrapper">
+                      <canvas ref={qrCanvasRef}></canvas>
+                    </div>
+
+                    <div className="share-url-container">
+                      <input type="text" value={shareUrl} readOnly />
+                      <button onClick={handleCopyLink} className="copy-button">Copy</button>
+                    </div>
+
+                    <div className="quick-share-buttons">
+                      <a href={whatsappUrl} target="_blank" rel="noreferrer" className="whatsapp-button">
+                        WhatsApp Share
+                      </a>
+                      <button onClick={handleNativeShare} className="copy-button" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+                        Share Link 📲
+                      </button>
+                      <button onClick={handleStartHostDemoSim} className="demo-button">
+                        Demo GPS
+                      </button>
+                    </div>
+                  </div>
+                </article>
+
+                {/* Map Post */}
+                <article className="instagram-card map-card">
+                  <div className="post-header">
+                    <div className="post-avatar">📍</div>
+                    <div className="post-user">
+                      <strong>{sessionTitle}</strong>
+                      <span>Live Telemetry Stream</span>
+                    </div>
+                  </div>
+
+                  <MapView locations={activeLocations} />
+
+                  <div className="telemetry-grid">
+                    <div className="telemetry-card">
+                      <span>Coordinates (Lat, Lng)</span>
+                      <strong>{telemetry.latLng}</strong>
+                    </div>
+                    <div className="telemetry-card">
+                      <span>IP Address</span>
+                      <strong>{telemetry.ip}</strong>
+                    </div>
+                    <div className="telemetry-card">
+                      <span>Accuracy / Speed</span>
+                      <strong>{telemetry.accuracySpeed}</strong>
+                    </div>
+                    <div className="telemetry-card">
+                      <span>Last Update</span>
+                      <strong>{telemetry.timestamp}</strong>
+                    </div>
+                  </div>
+                </article>
+
+                {/* Database Table Card */}
+                <article className="instagram-card database-card">
+                  <div className="post-header">
+                    <div className="post-avatar">🗄️</div>
+                    <div className="post-user">
+                      <strong>MongoDB Live Records</strong>
+                      <span>{dbRecords.length} Saved in Session</span>
+                    </div>
+                    <a href={`${BACKEND_URL}/api/records/export`} target="_blank" rel="noreferrer" className="export-button">
+                      Export CSV
+                    </a>
+                  </div>
+
+                  <div className="table-responsive">
+                    <table className="db-table">
+                      <thead>
+                        <tr>
+                          <th>Time</th>
+                          <th>Device</th>
+                          <th>IP</th>
+                          <th>Latitude</th>
+                          <th>Longitude</th>
+                          <th>Accuracy</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dbRecords.length === 0 ? (
+                          <tr><td colSpan={6} style={{ color: '#737373', textAlign: 'center' }}>Awaiting device connection and GPS telemetry...</td></tr>
+                        ) : (
+                          dbRecords.map((r, i) => (
+                            <tr key={i}>
+                              <td><span style={{ color: '#737373', fontSize: '0.75rem' }}>{r.timestamp}</span></td>
+                              <td><strong>{r.name}</strong></td>
+                              <td><span className="ip-badge">{r.ip}</span></td>
+                              <td style={{ color: '#10B981', fontFamily: 'monospace' }}>{r.latitude}</td>
+                              <td style={{ color: '#10B981', fontFamily: 'monospace' }}>{r.longitude}</td>
+                              <td style={{ color: '#737373' }}>{r.accuracy}</td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </article>
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>
