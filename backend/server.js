@@ -121,6 +121,67 @@ app.get('/api/records', async (req, res) => {
   }
 });
 
+// API Endpoint: Save location record via REST POST
+app.post('/api/records', async (req, res) => {
+  const { sessionId, participantName, latitude, longitude, accuracy, speed, heading } = req.body;
+  const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.ip || '127.0.0.1';
+
+  if (latitude === undefined || longitude === undefined) {
+    return res.status(400).json({ success: false, error: 'Latitude and Longitude are required' });
+  }
+
+  const recordData = {
+    sessionId: sessionId || 'default-session',
+    participantId: 'http-recipient',
+    participantName: participantName || 'Mobile Recipient',
+    latitude: Number(latitude),
+    longitude: Number(longitude),
+    accuracy: accuracy ? Number(accuracy) : null,
+    speed: speed ? Number(speed) : null,
+    heading: heading ? Number(heading) : null,
+    ipAddress: clientIp,
+    createdAt: new Date()
+  };
+
+  if (isMongoConnected) {
+    try {
+      const doc = await LocationRecord.create(recordData);
+      io.emit('location-updated', {
+        participantId: 'http-recipient',
+        participantName: recordData.participantName,
+        ip: clientIp,
+        location: {
+          latitude: recordData.latitude,
+          longitude: recordData.longitude,
+          accuracy: recordData.accuracy,
+          speed: recordData.speed,
+          heading: recordData.heading
+        }
+      });
+      return res.status(201).json({ success: true, database: 'MongoDB', id: doc._id, data: doc });
+    } catch (err) {
+      console.error('Error saving to MongoDB:', err);
+      return res.status(500).json({ success: false, error: err.message });
+    }
+  } else {
+    fallbackMemoryRecords.unshift(recordData);
+    if (fallbackMemoryRecords.length > 500) fallbackMemoryRecords.pop();
+    io.emit('location-updated', {
+      participantId: 'http-recipient',
+      participantName: recordData.participantName,
+      ip: clientIp,
+      location: {
+        latitude: recordData.latitude,
+        longitude: recordData.longitude,
+        accuracy: recordData.accuracy,
+        speed: recordData.speed,
+        heading: recordData.heading
+      }
+    });
+    return res.status(201).json({ success: true, database: 'Memory', data: recordData });
+  }
+});
+
 // API Endpoint: Export CSV
 app.get('/api/records/export', async (req, res) => {
   let rows = [];
