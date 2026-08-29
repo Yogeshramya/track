@@ -18,6 +18,7 @@ export default function Home() {
   const [sessionCreated, setSessionCreated] = useState(false);
 
   // Form states
+  const [isFollowing, setIsFollowing] = useState(false);
   const [sessionTitle, setSessionTitle] = useState('My Mobile Location Request');
   const [sessionDuration, setSessionDuration] = useState('60');
   const [shareUrl, setShareUrl] = useState('');
@@ -292,22 +293,17 @@ export default function Home() {
         <nav className="ig-navigation">
           <a className="ig-nav-item active">
             <span className="ig-icon">
-              <svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10.5V20h14v-9.5"/><path d="M9 20v-6h6v6"/></svg>
+              <svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5" /><path d="M5 10.5V20h14v-9.5" /><path d="M9 20v-6h6v6" /></svg>
             </span>
             <span>Home</span>
           </a>
           <a className="ig-nav-item">
             <span className="ig-icon">
-              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
             </span>
-            <span>Live Telemetry</span>
+            <span>Reel</span>
           </a>
         </nav>
-        <div className="sidebar-bottom">
-          <div style={{ padding: '0.75rem', fontSize: '0.75rem', color: '#737373' }}>
-            Backend: {BACKEND_URL.replace(/https?:\/\//, '')}
-          </div>
-        </div>
       </aside>
 
       {/* Main Container */}
@@ -327,47 +323,49 @@ export default function Home() {
             <section className="profile-header">
               <div className="profile-avatar">
                 <div className="location-avatar">
-                  <svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
                 </div>
               </div>
               <div className="profile-info">
                 <div className="profile-title">
-                  <h1>LocShare</h1>
+                  <h1>mr_in.nocent_yogi</h1>
                   <span className="verified">✓</span>
                 </div>
 
                 <div className="profile-stats">
-                  <div><strong>1</strong><span>Session</span></div>
-                  <div><strong>{activeLocations.length}</strong><span>Devices</span></div>
-                  <div><strong>Live</strong><span>MongoDB Stream</span></div>
+                  <div><strong>94</strong><span>posts</span></div>
+                  <div><strong>293</strong><span>followers</span></div>
+                  <div><strong>625</strong><span>following</span></div>
                 </div>
 
                 <div className="profile-description">
-                  <strong>Real-Time Location Sharing</strong>
-                  <p>Track live mobile location with explicit user consent.</p>
-                  <span className="profile-link">🔒 Consent-Guarded & Real-Time</span>
+                  <p>Avalai Avalai 🧚 Rasithu Kidanthu Vizhigal👀
+                    Vaeraraiyum Paarkathae🙈
+                    Avalai Avalai Pazhagi Tholaitha Ithayam
+                    Vaeraraiyum Aerkaathae❣️
+                    @editor_Yogi_R³</p>
+                  <span className="profile-link">🔗 yrdigitalenterprises.in</span>
+                  <span className="profile-link">13/b kuttiyan palayam street, Kumbakonam 612001</span>
                 </div>
               </div>
             </section>
 
-            {/* Story Row */}
-            <div className="story-row">
-              <div className="story" onClick={() => setSessionCreated(false)}>
-                <div className="story-ring"><div className="story-icon">+</div></div>
-                <span>Create</span>
-              </div>
-              <div className="story">
-                <div className="story-ring green">
-                  <svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-                </div>
-                <span>Location</span>
-              </div>
-              <div className="story">
-                <div className="story-ring blue">
-                  <svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M3 12h18"/></svg>
-                </div>
-                <span>Share</span>
-              </div>
+            {/* Profile Action Buttons */}
+            <div className="profile-action-buttons">
+              <button
+                className={`profile-follow-btn ${isFollowing ? 'following' : ''}`}
+                onClick={() => setIsFollowing(!isFollowing)}
+              >
+                {isFollowing ? 'Following' : 'Follow'}
+              </button>
+              <button className="profile-user-plus-btn" title="Discover People">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="8.5" cy="7" r="4" />
+                  <line x1="20" y1="8" x2="20" y2="14" />
+                  <line x1="23" y1="11" x2="17" y2="11" />
+                </svg>
+              </button>
             </div>
 
             {!sessionCreated ? (
@@ -375,7 +373,7 @@ export default function Home() {
               <article className="instagram-card">
                 <div className="post-header">
                   <div className="post-avatar">
-                    <svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
                   </div>
                   <div className="post-user">
                     <strong>LocShare</strong>
@@ -385,7 +383,7 @@ export default function Home() {
 
                 <div className="location-hero">
                   <div className="hero-location-icon">
-                    <svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <svg viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
                   </div>
                   <span>LIVE LOCATION STREAM</span>
                 </div>
@@ -546,7 +544,7 @@ export default function Home() {
             {!isSharingActive ? (
               <article className="instagram-card consent-card">
                 <div className="consent-avatar">
-                  <svg viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+                  <svg viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="m9 12 2 2 4-4" /></svg>
                 </div>
                 <h1>{sessionTitle}</h1>
                 <p style={{ color: '#A8A8A8', fontSize: '0.9rem', margin: '0.5rem 0 1rem' }}>
