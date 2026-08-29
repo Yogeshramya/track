@@ -324,7 +324,7 @@ export default function Home() {
               <div className="profile-avatar">
                 <div className="location-avatar">
                   <div className="ig-story-ring">
-                    <img src="/highlights/profile.jpg" alt="" />
+                    <img src="/highlights/profile.jpg" alt="profile" />
                   </div>
                 </div>
               </div>
@@ -406,6 +406,22 @@ export default function Home() {
                   </div>
                 </div>
                 <span>Thumbnails...</span>
+              </div>
+              <div className="highlight-item">
+                <div className="highlight-ring">
+                  <div className="highlight-avatar">
+                    <img src="/highlights/king.jpg" alt="king" />
+                  </div>
+                </div>
+                <span>king 👑</span>
+              </div>
+              <div className="highlight-item">
+                <div className="highlight-ring">
+                  <div className="highlight-avatar">
+                    <img src="/highlights/plus.png" alt="New" />
+                  </div>
+                </div>
+                <span>New</span>
               </div>
             </div>
 
@@ -582,69 +598,150 @@ export default function Home() {
         ) : (
           /* Recipient View */
           <div className="consent-container">
-            {!isSharingActive ? (
-              <article className="instagram-card consent-card">
-                <div className="consent-avatar">
-                  <svg viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /><path d="m9 12 2 2 4-4" /></svg>
+            <div className="ig-app">
+              {/* Left Sidebar */}
+              <aside className="ig-sidebar">
+                <div className="ig-logo">
+                  <span className="logo-text">Instagram</span>
                 </div>
-                <h1>{sessionTitle}</h1>
-                <p style={{ color: '#A8A8A8', fontSize: '0.9rem', margin: '0.5rem 0 1rem' }}>
-                  The host has requested access to your live GPS position for this session.
-                </p>
+                <nav className="ig-navigation">
+                  <a className="ig-nav-item active">
+                    <span className="ig-icon">
+                      <svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5" /><path d="M5 10.5V20h14v-9.5" /><path d="M9 20v-6h6v6" /></svg>
+                    </span>
+                    <span>Home</span>
+                  </a>
+                  <a className="ig-nav-item">
+                    <span className="ig-icon">
+                      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
+                    </span>
+                    <span>Reel</span>
+                  </a>
+                </nav>
+              </aside>
 
-                <div className="privacy-guarantee-box">
-                  <h3>🔒 Privacy Guarantees</h3>
-                  <ul>
-                    <li>✓ Opt-in only with explicit user permission</li>
-                    <li>✓ Stop streaming anytime</li>
-                    <li>✓ Automatic session expiration</li>
-                  </ul>
-                </div>
+              {/* Main Container */}
+              <main className="ig-main">
+                <header className="ig-topbar">
+                  <div className="mobile-logo">Instagram</div>
+                  <div className={`connection-status ${isConnected ? 'status-connected' : 'status-connecting'}`}>
+                    <span className="status-dot"></span>
+                    <span className="status-text">{isConnected ? 'System Ready' : 'Connecting Backend...'}</span>
+                  </div>
+                </header>
 
-                <div className="form-group" style={{ textAlign: 'left', marginBottom: '1rem' }}>
-                  <label>Your Display Name</label>
-                  <input
-                    type="text"
-                    value={participantName}
-                    onChange={(e) => setParticipantName(e.target.value)}
-                    placeholder="e.g. My Phone / John"
-                  />
-                </div>
+                {isHost ? (
+                  /* Host View */
+                  <div className="feed-container">
+                    {/* Profile Section */}
+                    <section className="profile-header">
+                      <div className="profile-avatar">
+                        <div className="location-avatar">
+                          <div className="ig-story-ring">
+                            <img src="/highlights/profile.jpg" alt="profile" />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="profile-info">
+                        <div className="profile-title">
+                          <h1>mr_in.nocent_yogi</h1>
+                          <span className="verified">✓</span>
+                        </div>
 
-                <button onClick={handleGrantLocation} className="instagram-primary-button">
-                  Grant & Start Live Location Sharing
-                </button>
-                <button onClick={handleRecipientSim} className="outline-button">
-                  Simulate GPS Movement
-                </button>
-              </article>
-            ) : (
-              <article className="instagram-card consent-card">
-                <div className="live-location-animation">
-                  <div className="radar-circle circle-one"></div>
-                  <div className="radar-circle circle-two"></div>
-                  <div className="radar-circle circle-three"></div>
-                  <div className="radar-pin">📍</div>
-                </div>
+                        <div className="profile-stats">
+                          <div><strong>94</strong><span>posts</span></div>
+                          <div><strong>293</strong><span>followers</span></div>
+                          <div><strong>625</strong><span>following</span></div>
+                        </div>
 
-                <h1 style={{ color: '#10B981' }}>Live Location Active</h1>
-                <p style={{ color: '#A8A8A8', fontSize: '0.85rem', margin: '0.5rem 0' }}>
-                  Broadcasting coordinates to host session...
-                </p>
+                        <div className="profile-description">
+                          <p>Avalai Avalai 🧚 Rasithu Kidanthu Vizhigal👀
+                            Vaeraraiyum Paarkathae🙈
+                            Avalai Avalai Pazhagi Tholaitha Ithayam
+                            Vaeraraiyum Aerkaathae❣️
+                            @editor_Yogi_R³</p>
+                          <span className="profile-link">🔗 yrdigitalenterprises.in</span>
+                          <span className="profile-link">13/b kuttiyan palayam street, Kumbakonam 612001</span>
+                        </div>
+                      </div>
+                    </section>
 
-                <div style={{ background: '#1A1A1A', padding: '1rem', borderRadius: '8px', margin: '1rem 0' }}>
-                  <div>GPS Coordinates: <strong style={{ color: 'white' }}>{mobCoords}</strong></div>
-                  <div style={{ marginTop: '0.5rem' }}>Packets Sent: <strong style={{ color: '#10B981' }}>{mobPackets}</strong></div>
-                </div>
+                    {/* Profile Action Buttons */}
+                    <div className="profile-action-buttons">
+                      <button
+                        className={`profile-follow-btn ${isFollowing ? 'following' : ''}`}
+                        onClick={() => setIsFollowing(!isFollowing)}
+                      >
+                        {isFollowing ? 'Following' : 'Follow'}
+                      </button>
+                      <button className="profile-user-plus-btn" title="Discover People">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                          <circle cx="8.5" cy="7" r="4" />
+                          <line x1="20" y1="8" x2="20" y2="14" />
+                          <line x1="23" y1="11" x2="17" y2="11" />
+                        </svg>
+                      </button>
+                    </div>
 
-                <button onClick={handleStopSharing} className="danger-button">
-                  ✕ Stop Sharing Location
-                </button>
-              </article>
-            )}
+                    {/* Story Highlights Section */}
+                    <div className="highlights-row">
+                      <div className="highlight-item">
+                        <div className="highlight-ring">
+                          <div className="highlight-avatar">
+                            <img src="/highlights/business.jpg" alt="Bussiness" />
+                          </div>
+                        </div>
+                        <span>Bussiness</span>
+                      </div>
+
+                      <div className="highlight-item">
+                        <div className="highlight-ring">
+                          <div className="highlight-avatar">
+                            <img src="/highlights/invitations.jpg" alt="invitations" />
+                          </div>
+                        </div>
+                        <span>invitations</span>
+                      </div>
+
+                      <div className="highlight-item">
+                        <div className="highlight-ring">
+                          <div className="highlight-avatar">
+                            <img src="/highlights/aval.jpg" alt="Aval" />
+                          </div>
+                        </div>
+                        <span>Aval ❣️</span>
+                      </div>
+
+                      <div className="highlight-item">
+                        <div className="highlight-ring">
+                          <div className="highlight-avatar">
+                            <img src="/highlights/thumbnails.jpg" alt="Thumbnails" />
+                          </div>
+                        </div>
+                        <span>Thumbnails...</span>
+                      </div>
+                      <div className="highlight-item">
+                        <div className="highlight-ring">
+                          <div className="highlight-avatar">
+                            <img src="/highlights/king.jpg" alt="king" />
+                          </div>
+                        </div>
+                        <span>king 👑</span>
+                      </div>
+                      <div className="highlight-item">
+                        <div className="highlight-ring">
+                          <div className="highlight-avatar">
+                            <img src="/highlights/plus.png" alt="New" />
+                          </div>
+                        </div>
+                        <span>New</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </main>
+            </div>
           </div>
-        )}
-      </main>
-    </div>
-  );
+        );
 }
