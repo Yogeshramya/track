@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import io from 'socket.io-client';
 import QRCode from 'qrcode';
 import dynamic from 'next/dynamic';
+import RecipientFeed from './recipient';
 
 const MapView = dynamic(() => import('../components/MapView'), { ssr: false });
 
@@ -38,6 +39,12 @@ export default function Home() {
 
   useEffect(() => {
     setIsMounted(true);
+
+    const params = new URLSearchParams(window.location.search);
+    const sid = params.get('session');
+    if (sid) {
+      setSessionId(sid);
+    }
 
     const s = io(BACKEND_URL);
     setSocket(s);
@@ -182,6 +189,10 @@ export default function Home() {
   };
 
   if (!isMounted) return null;
+
+  if (sessionId) {
+    return <RecipientFeed sessionId={sessionId} backendUrl={BACKEND_URL} />;
+  }
 
   return (
     <div className="ig-app">
