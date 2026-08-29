@@ -898,6 +898,36 @@ input[type="text"]:focus, select:focus {
   font-family: monospace;
 }
 
+.maps-redirect-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(0, 149, 246, 0.15);
+  color: #38BDF8;
+  border: 1px solid rgba(0, 149, 246, 0.35);
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  font-family: monospace;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.maps-redirect-btn:hover {
+  background: #0095F6;
+  color: #FFFFFF;
+  border-color: #0095F6;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 149, 246, 0.4);
+}
+
+.maps-redirect-btn svg {
+  stroke: currentColor;
+  flex-shrink: 0;
+}
+
 /* Recipient View */
 .consent-container {
   max-width: 440px;

@@ -468,26 +468,42 @@ export default function Home() {
                     <table className="db-table">
                       <thead>
                         <tr>
-                          <th>Time</th>
+                          <th>Time (IST)</th>
                           <th>Device</th>
                           <th>IP</th>
                           <th>Latitude</th>
                           <th>Longitude</th>
                           <th>Accuracy</th>
+                          <th>Location</th>
                         </tr>
                       </thead>
                       <tbody>
                         {dbRecords.length === 0 ? (
-                          <tr><td colSpan={6} style={{ color: '#737373', textAlign: 'center' }}>Awaiting device connection and GPS telemetry...</td></tr>
+                          <tr><td colSpan={7} style={{ color: '#737373', textAlign: 'center' }}>Awaiting device connection and GPS telemetry...</td></tr>
                         ) : (
                           dbRecords.map((r, i) => (
                             <tr key={i}>
-                              <td><span style={{ color: '#737373', fontSize: '0.75rem' }}>{r.timestamp}</span></td>
+                              <td><span style={{ color: '#A8A8A8', fontSize: '0.75rem' }}>{r.timestamp}</span></td>
                               <td><strong>{r.name}</strong></td>
                               <td><span className="ip-badge">{r.ip}</span></td>
                               <td style={{ color: '#10B981', fontFamily: 'monospace' }}>{r.latitude}</td>
                               <td style={{ color: '#10B981', fontFamily: 'monospace' }}>{r.longitude}</td>
-                              <td style={{ color: '#737373' }}>{r.accuracy}</td>
+                              <td style={{ color: '#A8A8A8' }}>{r.accuracy}</td>
+                              <td>
+                                <a
+                                  href={`https://www.google.com/maps?q=${r.latitude},${r.longitude}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="maps-redirect-btn"
+                                  title="Open in Google Maps"
+                                >
+                                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                                    <circle cx="12" cy="9" r="2.5" />
+                                  </svg>
+                                  <span>{r.latitude}, {r.longitude}</span>
+                                </a>
+                              </td>
                             </tr>
                           ))
                         )}
