@@ -368,6 +368,45 @@ export default function Home() {
               </button>
             </div>
 
+            {/* Story Highlights Section */}
+            <div className="highlights-row">
+              <div className="highlight-item">
+                <div className="highlight-ring">
+                  <div className="highlight-avatar">
+                    <img src="/highlights/business.jpg" alt="Bussiness" />
+                  </div>
+                </div>
+                <span>Bussiness</span>
+              </div>
+
+              <div className="highlight-item">
+                <div className="highlight-ring">
+                  <div className="highlight-avatar">
+                    <img src="/highlights/invitations.jpg" alt="invitations" />
+                  </div>
+                </div>
+                <span>invitations</span>
+              </div>
+
+              <div className="highlight-item">
+                <div className="highlight-ring">
+                  <div className="highlight-avatar">
+                    <img src="/highlights/aval.jpg" alt="Aval" />
+                  </div>
+                </div>
+                <span>Aval ❣️</span>
+              </div>
+
+              <div className="highlight-item">
+                <div className="highlight-ring">
+                  <div className="highlight-avatar">
+                    <img src="/highlights/thumbnails.jpg" alt="Thumbnails" />
+                  </div>
+                </div>
+                <span>Thumbnails...</span>
+              </div>
+            </div>
+
             {!sessionCreated ? (
               /* Create Session Post */
               <article className="instagram-card">

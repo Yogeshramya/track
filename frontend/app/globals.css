@@ -349,6 +349,78 @@ body {
   stroke: #FFFFFF;
 }
 
+/* Story Highlights */
+.highlights-row {
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  padding: 0.25rem 0 1.25rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--bg-card-border);
+  scrollbar-width: none;
+}
+
+.highlights-row::-webkit-scrollbar {
+  display: none;
+}
+
+.highlight-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.highlight-item span {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #FFFFFF;
+  letter-spacing: -0.01em;
+  max-width: 76px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.highlight-ring {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  padding: 3px;
+  background: #181A20;
+  border: 1.5px solid #2D3139;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.highlight-item:hover .highlight-ring {
+  transform: scale(1.05);
+  border-color: #4F6DF5;
+}
+
+.highlight-avatar {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #121212;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.highlight-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 /* Stories Bar */
 .story-row {
   display: flex;
