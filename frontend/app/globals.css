@@ -46,29 +46,27 @@ body {
   min-height: 100vh;
 }
 
-/* Left Sidebar */
+/* Left Sidebar - Collapsed Icon Rail by Default, Expands on Hover */
 .ig-sidebar {
-  width: 220px;
+  width: 72px;
   height: 100vh;
   position: sticky;
   top: 0;
   border-right: 1px solid var(--bg-card-border);
-  padding: 1.25rem 0.75rem;
+  padding: 1.25rem 0.5rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   background: var(--bg-dark);
-  z-index: 100;
+  z-index: 200;
+  transition: width 0.25s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.25s ease, background 0.25s ease;
+  overflow-x: hidden;
 }
 
-@media (max-width: 1200px) {
-  .ig-sidebar {
-    width: 72px;
-    padding: 1.25rem 0.5rem;
-  }
-  .ig-sidebar .ig-nav-label {
-    display: none;
-  }
+.ig-sidebar:hover {
+  width: 240px;
+  background: #000000;
+  box-shadow: 8px 0 32px rgba(0, 0, 0, 0.75);
 }
 
 @media (max-width: 768px) {
@@ -78,7 +76,7 @@ body {
 }
 
 .ig-sidebar-top {
-  padding: 0.5rem 0.75rem 1.25rem;
+  padding: 0.5rem 0.65rem 1.25rem;
 }
 
 .ig-brand-icon {
@@ -107,14 +105,15 @@ body {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 0.7rem 0.85rem;
-  border-radius: 8px;
+  padding: 0.7rem 0.75rem;
+  border-radius: 10px;
   color: #FFFFFF;
   text-decoration: none;
   font-size: 0.95rem;
   font-weight: 400;
   transition: background 0.15s ease;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .ig-nav-item:hover {
@@ -161,10 +160,24 @@ body {
   display: block;
 }
 
+/* Nav Label Animation: hidden by default, smoothly revealed on hover */
 .ig-nav-label {
   font-size: 0.95rem;
   color: #FFFFFF;
   white-space: nowrap;
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  transform: translateX(-6px);
+  transition: opacity 0.2s ease, max-width 0.25s cubic-bezier(0.2, 0, 0, 1), transform 0.2s ease;
+  pointer-events: none;
+}
+
+.ig-sidebar:hover .ig-nav-label {
+  opacity: 1;
+  max-width: 150px;
+  transform: translateX(0);
+  pointer-events: auto;
 }
 
 /* Main Content Area */
