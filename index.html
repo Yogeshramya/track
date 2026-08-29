@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Instagram</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+
+<body>
+
+  <div id="app">
+
+    <!-- =====================================================
+       INSTAGRAM STYLE APP SHELL
+  ====================================================== -->
+
+    <div class="ig-app">
+
+      <!-- ================= LEFT SIDEBAR ================= -->
+
+      <aside class="ig-sidebar">
+
+        <div class="ig-logo">
+          <span class="logo-text">Instagram</span>
+        </div>
+
+        <nav class="ig-navigation">
+
+          <a href="#" class="ig-nav-item active">
+            <span class="ig-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M3 11.5 12 4l9 7.5" />
+                <path d="M5 10.5V20h14v-9.5" />
+                <path d="M9 20v-6h6v6" />
+              </svg>
+            </span>
+            <span>Home</span>
+          </a>
+
+          <a href="#" class="ig-nav-item">
+            <span class="ig-icon">
+              <svg viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-4-4" />
+              </svg>
+            </span>
+            <span>Search</span>
+          </a>
+
+          <a href="#" class="ig-nav-item">
+            <span class="ig-icon">
+              <svg viewBox="0 0 24 24">
+                <rect x="4" y="4" width="16" height="16" rx="2" />
+                <path d="m8 15 3-3 2 2 3-4" />
+              </svg>
+            </span>
+            <span>Explore</span>
+          </a>
+
+          <a href="#" class="ig-nav-item">
+            <span class="ig-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="m8 5 11 7-11 7z" />
+              </svg>
+            </span>
+            <span>Live Map</span>
+          </a>
+
+          <a href="#" class="ig-nav-item">
+            <span class="ig-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 5h16v11H8l-4 4z" />
+              </svg>
+            </span>
+            <span>Messages</span>
+          </a>
+
+          <a href="#" class="ig-nav-item">
+            <span class="ig-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 21s-7-4.4-7-10V5l7-3 7 3v6c0 5.6-7 10-7 10z" />
+                <path d="m9 12 2 2 4-4" />
+              </svg>
+            </span>
+            <span>Consent</span>
+          </a>
+
+          <a href="#" class="ig-nav-item">
+            <span class="ig-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M12 21s-8-4.5-8-11.5A8 8 0 0 1 20 9.5C20 16.5 12 21 12 21z" />
+                <circle cx="12" cy="9" r="2.5" />
+              </svg>
+            </span>
+            <span>Location</span>
+          </a>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+
+          <a class="ig-nav-item">
+            <span class="ig-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 5h16v14H4z" />
+                <path d="M8 9h8M8 13h5" />
+              </svg>
+            </span>
+            <span>More</span>
+          </a>
+
+        </div>
+
+      </aside>
+
+
+      <!-- ================= MAIN AREA ================= -->
+
+      <main class="ig-main">
+
+        <!-- TOP HEADER -->
+
+        <header class="ig-topbar">
+
+          <div class="mobile-logo">
+            Instagram
+          </div>
+
+          <div class="connection-status" id="connection-status">
+
+            <span class="status-dot"></span>
+
+            <span class="status-text">
+              Connecting...
+            </span>
+
+          </div>
+
+        </header>
+
+
+        <!-- =================================================
+           HOST VIEW
+      ================================================== -->
+
+        <section id="host-view" class="view-section active">
+
+          <div class="feed-container">
+
+
+            <!-- ================= PROFILE STYLE HEADER ================= -->
+
+            <section class="profile-header">
+
+              <div class="profile-avatar">
+
+                <div class="location-avatar">
+
+                  <svg viewBox="0 0 24 24">
+                    <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z" />
+
+                    <circle cx="12" cy="10" r="3" />
+
+                  </svg>
+
+                </div>
+
+              </div>
+
+
+              <div class="profile-info">
+
+                <div class="profile-title">
+
+                  <h1>Instagram</h1>
+
+                  <span class="verified">
+                    ✓
+                  </span>
+
+                </div>
+
+
+                <div class="profile-actions">
+
+                  <button class="profile-button primary"
+                    onclick="document.getElementById('create-card').scrollIntoView({behavior:'smooth'})">
+                    Create Session
+                  </button>
+
+                  <button class="profile-button">
+                    Share
+                  </button>
+
+                </div>
+
+
+                <div class="profile-stats">
+
+                  <div>
+                    <strong>1</strong>
+                    <span>Session</span>
+                  </div>
+
+                  <div>
+                    <strong>0</strong>
+                    <span>Devices</span>
+                  </div>
+
+                  <div>
+                    <strong>Live</strong>
+                    <span>Tracking</span>
+                  </div>
+
+                </div>
+
+
+                <div class="profile-description">
+
+                  <strong>Real-Time Location Sharing</strong>
+
+                  <p>
+                    Securely share live mobile location with
+                    explicit user consent.
+                  </p>
+
+                  <span class="profile-link">
+                    🔒 Consent-based location sharing
+                  </span>
+
+                </div>
+
+              </div>
+
+            </section>
+
+
+            <!-- ================= STORY STYLE QUICK ACTIONS ================= -->
+
+            <div class="story-row">
+
+              <div class="story">
+
+                <div class="story-ring">
+
+                  <div class="story-icon">
+                    +
+                  </div>
+
+                </div>
+
+                <span>Create</span>
+
+              </div>
+
+
+              <div class="story">
+
+                <div class="story-ring green">
+
+                  <svg viewBox="0 0 24 24">
+                    <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+
+                </div>
+
+                <span>Location</span>
+
+              </div>
+
+
+              <div class="story">
+
+                <div class="story-ring blue">
+
+                  <svg viewBox="0 0 24 24">
+                    <path d="M12 3v18" />
+                    <path d="M3 12h18" />
+                  </svg>
+
+                </div>
+
+                <span>Share</span>
+
+              </div>
+
+
+              <div class="story">
+
+                <div class="story-ring purple">
+
+                  <svg viewBox="0 0 24 24">
+                    <rect x="4" y="4" width="16" height="16" rx="2" />
+                    <path d="M8 12h8" />
+                    <path d="M12 8v8" />
+                  </svg>
+
+                </div>
+
+                <span>QR Code</span>
+
+              </div>
+
+            </div>
+
+
+            <!-- =================================================
+               CREATE SESSION CARD
+          ================================================== -->
+
+            <article id="create-card" class="instagram-card create-session-card">
+
+              <div class="post-header">
+
+                <div class="post-avatar">
+
+                  <svg viewBox="0 0 24 24">
+                    <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+
+                </div>
+
+                <div class="post-user">
+
+                  <strong>LocShare</strong>
+
+                  <span>Real-Time Location</span>
+
+                </div>
+
+                <button class="more-button">
+                  •••
+                </button>
+
+              </div>
+
+
+              <div class="post-content">
+
+                <div class="location-hero">
+
+                  <div class="hero-glow"></div>
+
+                  <div class="hero-location-icon">
+
+                    <svg viewBox="0 0 24 24">
+
+                      <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z" />
+
+                      <circle cx="12" cy="10" r="3" />
+
+                    </svg>
+
+                  </div>
+
+                  <span>LIVE LOCATION</span>
+
+                </div>
+
+              </div>
+
+
+              <div class="post-actions">
+
+                <button>
+                  ♡
+                </button>
+
+                <button>
+                  ＋
+                </button>
+
+                <button>
+                  ↗
+                </button>
+
+                <button class="save-button">
+                  ♡
+                </button>
+
+              </div>
+
+
+              <div class="post-body">
+
+                <strong>
+                  Create Real-Time Mobile Location Link
+                </strong>
+
+                <p>
+                  Generate a secure shareable link or QR Code
+                  for live location sharing.
+                </p>
+
+
+                <!-- FORM -->
+
+                <div class="form-grid">
+
+                  <div class="form-group">
+
+                    <label for="session-title">
+                      Session Title / Purpose
+                    </label>
+
+                    <input type="text" id="session-title" placeholder="e.g. Delivery / Meetup"
+                      value="My Mobile Location Request">
+
+                  </div>
+
+
+                  <div class="form-group">
+
+                    <label for="session-duration">
+                      Link Expiration
+                    </label>
+
+                    <select id="session-duration">
+
+                      <option value="15">
+                        15 Minutes
+                      </option>
+
+                      <option value="60" selected>
+                        1 Hour
+                      </option>
+
+                      <option value="360">
+                        6 Hours
+                      </option>
+
+                      <option value="1440">
+                        24 Hours
+                      </option>
+
+                    </select>
+
+                  </div>
+
+                </div>
+
+
+                <button id="btn-create-session" class="instagram-primary-button">
+
+                  <svg viewBox="0 0 24 24">
+
+                    <line x1="12" y1="5" x2="12" y2="19" />
+
+                    <line x1="5" y1="12" x2="19" y2="12" />
+
+                  </svg>
+
+                  Generate Shareable Link & QR Code
+
+                </button>
+
+              </div>
+
+            </article>
+
+
+            <!-- =================================================
+               ACTIVE SESSION
+          ================================================== -->
+
+            <div id="active-session-panel" class="hidden">
+
+              <div class="dashboard-instagram">
+
+
+                <!-- ================= SHARE CARD ================= -->
+
+                <article class="instagram-card">
+
+                  <div class="post-header">
+
+                    <div class="post-avatar qr-avatar">
+                      QR
+                    </div>
+
+                    <div class="post-user">
+
+                      <strong>LocShare</strong>
+
+                      <span>
+                        Share Session
+                      </span>
+
+                    </div>
+
+                    <button class="more-button">
+                      •••
+                    </button>
+
+                  </div>
+
+
+                  <div class="qr-section">
+
+                    <h2>
+                      Scan with Mobile Phone
+                    </h2>
+
+                    <p>
+                      Scan this QR code with a mobile camera
+                      or share the link.
+                    </p>
+
+
+                    <div class="qr-wrapper">
+
+                      <canvas id="qr-canvas"></canvas>
+
+                    </div>
+
+
+                    <div class="share-url-container">
+
+                      <input type="text" id="share-url-input" readonly>
+
+                      <button id="btn-copy-url" class="copy-button">
+                        Copy
+                      </button>
+
+                    </div>
+
+
+                    <div class="quick-share-buttons">
+
+                      <a id="btn-share-whatsapp" target="_blank" class="whatsapp-button">
+                        WhatsApp
+                      </a>
+
+                      <button id="btn-native-share" class="copy-button" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+                        Share Link 📲
+                      </button>
+
+                      <button id="btn-demo-sim" class="demo-button">
+                        Demo GPS
+                      </button>
+
+                    </div>
+
+                  </div>
+
+                </article>
+
+
+                <!-- ================= DEVICES ================= -->
+
+                <article class="instagram-card">
+
+                  <div class="post-header">
+
+                    <div class="post-avatar">
+                      👥
+                    </div>
+
+                    <div class="post-user">
+
+                      <strong>
+                        Connected Devices
+                      </strong>
+
+                      <span>
+                        Live participants
+                      </span>
+
+                    </div>
+
+                  </div>
+
+
+                  <div id="participant-list" class="participant-list">
+
+                    <div class="empty-state">
+
+                      <span class="pulse-ring"></span>
+
+                      <p>
+                        Awaiting recipient to open
+                        the link and grant consent...
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                </article>
+
+
+                <!-- ================= MAP ================= -->
+
+                <article class="instagram-card map-card">
+
+                  <div class="post-header">
+
+                    <div class="post-avatar map-avatar">
+                      📍
+                    </div>
+
+                    <div class="post-user">
+
+                      <strong id="dash-session-title">
+                        Live Map Telemetry
+                      </strong>
+
+                      <span>
+                        <span id="session-timer-badge" class="badge">
+                          Expires in 60m
+                        </span>
+                      </span>
+
+                    </div>
+
+                    <div class="map-controls">
+
+                      <button id="btn-recenter" class="small-button">
+                        Recenter
+                      </button>
+
+                      <button id="btn-clear-path" class="small-button">
+                        Clear
+                      </button>
+
+                    </div>
+
+                  </div>
+
+
+                  <div id="map"></div>
+
+
+                  <!-- TELEMETRY -->
+
+                  <div class="telemetry-grid">
+
+                    <div class="telemetry-card">
+
+                      <span>
+                        Latitude / Longitude
+                      </span>
+
+                      <strong id="telem-latlng">
+                        -- / --
+                      </strong>
+
+                    </div>
+
+
+                    <div class="telemetry-card">
+
+                      <span>
+                        IP Address
+                      </span>
+
+                      <strong id="telem-ip">
+                        --
+                      </strong>
+
+                    </div>
+
+
+                    <div class="telemetry-card">
+
+                      <span>
+                        Accuracy / Speed
+                      </span>
+
+                      <strong id="telem-accuracy-speed">
+                        -- m | -- km/h
+                      </strong>
+
+                    </div>
+
+
+                    <div class="telemetry-card">
+
+                      <span>
+                        Last DB Save
+                      </span>
+
+                      <strong id="telem-timestamp">
+                        Awaiting signal
+                      </strong>
+
+                    </div>
+
+                  </div>
+
+                </article>
+
+
+                <!-- ================= DATABASE ================= -->
+
+                <article class="instagram-card database-card">
+
+                  <div class="post-header">
+
+                    <div class="post-avatar">
+                      🗄️
+                    </div>
+
+                    <div class="post-user">
+
+                      <strong>
+                        SQLite Database Logs
+                      </strong>
+
+                      <span id="db-record-count">
+                        0 Records Saved
+                      </span>
+
+                    </div>
+
+                    <a href="/api/records/export" target="_blank" class="export-button">
+                      Export CSV
+                    </a>
+
+                  </div>
+
+
+                  <div class="table-responsive">
+
+                    <table class="db-table">
+
+                      <thead>
+
+                        <tr>
+
+                          <th>
+                            Timestamp
+                          </th>
+
+                          <th>
+                            Device / Name
+                          </th>
+
+                          <th>
+                            IP Address
+                          </th>
+
+                          <th>
+                            Latitude
+                          </th>
+
+                          <th>
+                            Longitude
+                          </th>
+
+                          <th>
+                            Accuracy
+                          </th>
+
+                        </tr>
+
+                      </thead>
+
+
+                      <tbody id="db-records-tbody">
+
+                        <tr>
+
+                          <td colspan="6" class="text-muted">
+                            No database records logged
+                            yet for this session.
+                          </td>
+
+                        </tr>
+
+                      </tbody>
+
+                    </table>
+
+                  </div>
+
+                </article>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+        <!-- =================================================
+           RECIPIENT CONSENT VIEW
+      ================================================== -->
+
+        <section id="recipient-view" class="view-section hidden">
+
+          <div class="consent-container">
+
+            <!-- CONSENT -->
+
+            <article id="consent-prompt-card" class="instagram-card consent-card">
+
+              <div class="consent-avatar">
+
+                <svg viewBox="0 0 24 24">
+
+                  <path
+                    d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+
+                  <path d="m9 12 2 2 4-4" />
+
+                </svg>
+
+              </div>
+
+
+              <h1 id="recip-title">
+                Location Sharing Request
+              </h1>
+
+
+              <p id="recip-desc">
+
+                The host has invited you to share your
+                live mobile GPS position for this session.
+
+              </p>
+
+
+              <div class="privacy-guarantee-box">
+
+                <h3>
+                  🔒 Privacy & Control
+                </h3>
+
+                <ul>
+
+                  <li>
+                    <strong>Opt-In Only:</strong>
+                    Location is shared only after you
+                    tap the button below.
+                  </li>
+
+                  <li>
+                    <strong>Instant Control:</strong>
+                    Stop sharing at any time.
+                  </li>
+
+                  <li>
+                    <strong>Temporary Link:</strong>
+                    Access automatically expires.
+                  </li>
+
+                </ul>
+
+              </div>
+
+
+              <div class="form-group">
+
+                <label for="participant-name-input">
+                  Your Display Name
+                </label>
+
+                <input type="text" id="participant-name-input" placeholder="e.g. My Phone">
+
+              </div>
+
+
+              <button id="btn-grant-location" class="instagram-primary-button">
+
+                <svg viewBox="0 0 24 24">
+
+                  <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z" />
+
+                  <circle cx="12" cy="10" r="3" />
+
+                </svg>
+
+                Grant & Start Live Location Sharing
+
+              </button>
+
+
+              <button id="btn-recip-sim" class="outline-button">
+                Simulate Mobile GPS Movement
+              </button>
+
+            </article>
+
+
+            <!-- =================================================
+               LIVE BROADCASTING
+          ================================================== -->
+
+            <article id="broadcasting-card" class="instagram-card consent-card hidden">
+
+              <div class="live-location-animation">
+
+                <div class="radar-circle circle-one"></div>
+                <div class="radar-circle circle-two"></div>
+                <div class="radar-circle circle-three"></div>
+
+                <div class="radar-pin">
+                  📍
+                </div>
+
+              </div>
+
+
+              <h1 class="text-success">
+                Live Location Broadcast Active
+              </h1>
+
+
+              <p>
+                Your mobile coordinates are streaming
+                live to the session host.
+              </p>
+
+
+              <div class="live-telemetry-pill">
+
+                <div>
+
+                  <span>
+                    GPS Status
+                  </span>
+
+                  <strong id="mob-gps-status">
+                    High Accuracy (~3m)
+                  </strong>
+
+                </div>
+
+
+                <div>
+
+                  <span>
+                    Current Coordinates
+                  </span>
+
+                  <strong id="mob-coords">
+                    Detecting...
+                  </strong>
+
+                </div>
+
+
+                <div>
+
+                  <span>
+                    Updates Sent
+                  </span>
+
+                  <strong id="mob-packets-count">
+                    0
+                  </strong>
+
+                </div>
+
+              </div>
+
+
+              <button id="btn-stop-sharing" class="danger-button">
+
+                ✕
+                Stop Sharing Location
+
+              </button>
+
+            </article>
+
+          </div>
+
+        </section>
+
+      </main>
+
+
+      <!-- =====================================================
+         MOBILE NAVIGATION
+    ====================================================== -->
+
+      <nav class="mobile-navigation">
+
+        <button>
+          <svg viewBox="0 0 24 24">
+            <path d="M3 11.5 12 4l9 7.5" />
+            <path d="M5 10.5V20h14v-9.5" />
+          </svg>
+        </button>
+
+        <button>
+          <svg viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-4-4" />
+          </svg>
+        </button>
+
+        <button class="create-mobile-button">
+          +
+        </button>
+
+        <button>
+          <svg viewBox="0 0 24 24">
+            <path d="M4 5h16v11H8l-4 4z" />
+          </svg>
+        </button>
+
+        <button>
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="8" />
+            <circle cx="12" cy="10" r="2" />
+            <path d="M8 17c1.5-2 6.5-2 8 0" />
+          </svg>
+        </button>
+
+      </nav>
+
+    </div>
+
+
+    <!-- Toast -->
+
+    <div id="toast-container"></div>
+
+  </div>
+
+
+  <!-- Leaflet -->
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+
+  <!-- Application -->
+
+  <script type="module" src="/src/main.js"></script>
+
+</body>
+
+</html>
