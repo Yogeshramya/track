@@ -269,38 +269,56 @@ body {
 }
 
 .profile-title h1 {
-  font-size: 1.4rem;
-  font-weight: 600;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.01em;
 }
 
 .verified {
   color: #0095F6;
   font-weight: bold;
+  font-size: 1.1rem;
 }
 
 .profile-stats {
   display: flex;
-  gap: 1.5rem;
-  margin-bottom: 0.75rem;
-  font-size: 0.9rem;
+  gap: 1.75rem;
+  margin-bottom: 0.85rem;
+  font-size: 0.95rem;
+}
+
+.profile-stats div strong {
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 1rem;
 }
 
 .profile-stats div span {
-  color: var(--text-muted);
-  margin-left: 0.25rem;
+  color: #A8A8A8;
+  margin-left: 0.3rem;
+  font-weight: 400;
 }
 
 .profile-description p {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  margin-top: 0.2rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: #F5F5F5;
+  margin-top: 0.3rem;
+  font-weight: 400;
 }
 
 .profile-link {
-  font-size: 0.85rem;
-  color: #0095F6;
+  font-size: 0.88rem;
+  color: #E0F1FF;
   display: block;
   margin-top: 0.35rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.profile-link:hover {
+  text-decoration: underline;
 }
 
 /* Profile Follow Action Buttons */
@@ -314,49 +332,53 @@ body {
 
 .profile-follow-btn {
   flex: 1;
-  background: #4F6DF5;
+  background: #0095F6;
   color: #FFFFFF;
   font-family: var(--font-family);
   font-size: 0.95rem;
   font-weight: 600;
-  padding: 0.65rem 1.25rem;
-  height: 40px;
-  border-radius: 12px;
+  padding: 0.6rem 1.25rem;
+  height: 38px;
+  border-radius: 8px;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .profile-follow-btn:hover {
-  background: #3B5BDB;
+  background: #1877F2;
 }
 
 .profile-follow-btn.following {
-  background: #262626;
-  color: #F5F5F5;
-  border: 1px solid #363636;
+  background: #363636;
+  color: #FFFFFF;
+  border: 1px solid #454545;
 }
 
 .profile-follow-btn.following:hover {
-  background: #333333;
+  background: #262626;
 }
 
 .profile-user-plus-btn {
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
-  background: #20242A;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  background: #363636;
   color: #FFFFFF;
-  border: none;
-  border-radius: 12px;
+  border: 1px solid #454545;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
+}
+
+.profile-user-plus-btn:hover {
+  background: #262626;
 }
 
 .profile-user-plus-btn:hover {
