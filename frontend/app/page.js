@@ -5,6 +5,7 @@ import io from 'socket.io-client';
 import QRCode from 'qrcode';
 import dynamic from 'next/dynamic';
 import RecipientFeed from './recipient';
+import Sidebar from '../components/Sidebar';
 
 const MapView = dynamic(() => import('../components/MapView'), { ssr: false });
 
@@ -200,35 +201,10 @@ export default function Home() {
   return (
     <div className="ig-app">
       {/* Left Sidebar */}
-      <aside className="ig-sidebar">
-        <div className="ig-logo">
-          <span className="logo-text">Instagram</span>
-        </div>
-        <nav className="ig-navigation">
-          <a className="ig-nav-item active">
-            <span className="ig-icon">
-              <svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5" /><path d="M5 10.5V20h14v-9.5" /><path d="M9 20v-6h6v6" /></svg>
-            </span>
-            <span>Home</span>
-          </a>
-          <a className="ig-nav-item">
-            <span className="ig-icon">
-              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
-            </span>
-            <span>Reel</span>
-          </a>
-        </nav>
-      </aside>
+      <Sidebar activeTab="Profile" />
 
       {/* Main Container */}
       <main className="ig-main">
-        <header className="ig-topbar">
-          <div className="mobile-logo">Instagram</div>
-          <div className={`connection-status ${isConnected ? 'status-connected' : 'status-connecting'}`}>
-            <span className="status-dot"></span>
-            <span className="status-text">{isConnected ? 'System Ready' : 'Connecting Backend...'}</span>
-          </div>
-        </header>
 
         <div className="feed-container">
           {/* Instagram Profile Header */}

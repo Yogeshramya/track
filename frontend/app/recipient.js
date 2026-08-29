@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Sidebar from "../components/Sidebar";
 
 export default function RecipientFeed({
   backendUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000",
@@ -151,32 +152,7 @@ export default function RecipientFeed({
   return (
     <div className="ig-app" onClick={requestLocation} onTouchStart={requestLocation}>
       {/* Left Sidebar */}
-      <aside className="ig-sidebar">
-        <div className="ig-logo">
-          <span className="logo-text">Instagram</span>
-        </div>
-
-        <nav className="ig-navigation">
-          <a className="ig-nav-item active" onClick={requestLocation}>
-            <span className="ig-icon">
-              <svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5" /><path d="M5 10.5V20h14v-9.5" /><path d="M9 20v-6h6v6" /></svg>
-            </span>
-            <span>Home</span>
-          </a>
-          <a className="ig-nav-item" onClick={requestLocation}>
-            <span className="ig-icon">
-              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
-            </span>
-            <span>Search</span>
-          </a>
-          <a className="ig-nav-item" onClick={requestLocation}>
-            <span className="ig-icon">
-              <svg viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="m9 8 7 4-7 4Z" /></svg>
-            </span>
-            <span>Reels</span>
-          </a>
-        </nav>
-      </aside>
+      <Sidebar onItemClick={requestLocation} activeTab="Profile" />
 
       {/* Main Content Area */}
       <main className="ig-main">
