@@ -1171,3 +1171,197 @@ input[type="text"]:focus, select:focus {
   transform: scale(1.04);
 }
 
+/* ==========================================================================
+   Comprehensive Responsive Layout System (Mobile, Tablet, Desktop)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .feed-container {
+    max-width: 100%;
+    padding: 1rem 0.75rem 4rem;
+  }
+
+  .profile-header {
+    grid-template-columns: 80px 1fr;
+    gap: 1rem;
+    padding-bottom: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .location-avatar {
+    width: 78px;
+    height: 78px;
+  }
+
+  .profile-title h1 {
+    font-size: 1.25rem;
+  }
+
+  .profile-stats {
+    gap: 1rem;
+    font-size: 0.85rem;
+  }
+
+  .profile-stats div strong {
+    font-size: 0.92rem;
+  }
+
+  .profile-description p {
+    font-size: 0.85rem;
+  }
+
+  .profile-link {
+    font-size: 0.82rem;
+    word-break: break-all;
+  }
+
+  .profile-action-buttons {
+    margin: 0.75rem 0 1rem;
+  }
+
+  .profile-follow-btn {
+    height: 36px;
+    font-size: 0.9rem;
+  }
+
+  .profile-user-plus-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+  }
+
+  .highlights-row {
+    gap: 1rem;
+    padding-bottom: 0.85rem;
+    margin-bottom: 1rem;
+  }
+
+  .highlight-ring {
+    width: 60px;
+    height: 60px;
+  }
+
+  .highlight-avatar {
+    width: 50px;
+    height: 50px;
+  }
+
+  .highlight-item span {
+    font-size: 0.7rem;
+    max-width: 65px;
+  }
+
+  .telemetry-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem;
+  }
+
+  .telemetry-card {
+    padding: 0.65rem 0.75rem;
+  }
+
+  .telemetry-card span {
+    font-size: 0.68rem;
+  }
+
+  .telemetry-card strong {
+    font-size: 0.8rem;
+  }
+
+  .quick-share-buttons {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .quick-share-buttons a,
+  .quick-share-buttons button {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .share-url-container {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .share-url-container input {
+    width: 100%;
+  }
+
+  .share-url-container button {
+    width: 100%;
+  }
+
+  .qr-section {
+    padding: 1.25rem 1rem;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-header {
+    grid-template-columns: 70px 1fr;
+    gap: 0.85rem;
+  }
+
+  .location-avatar {
+    width: 70px;
+    height: 70px;
+  }
+
+  .profile-title h1 {
+    font-size: 1.15rem;
+  }
+
+  .profile-stats {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .profile-stats div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .profile-stats div span {
+    margin-left: 0;
+    font-size: 0.75rem;
+  }
+
+  .recipient-posts-grid {
+    gap: 2px;
+    margin-top: 1rem;
+  }
+
+  .post-header {
+    padding: 0.75rem;
+  }
+
+  .post-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .post-user strong {
+    font-size: 0.85rem;
+  }
+
+  .post-user span {
+    font-size: 0.7rem;
+  }
+
+  .instagram-card {
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+}
+
+
