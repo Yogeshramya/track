@@ -26,10 +26,24 @@ const LocationRecordSchema = new mongoose.Schema({
   speed: Number,
   heading: Number,
   ipAddress: String,
+  indiaTime: String,
   createdAt: { type: Date, default: Date.now }
 });
 
 const LocationRecord = mongoose.models.LocationRecord || mongoose.model('LocationRecord', LocationRecordSchema);
+
+function getIndiaTime(date = new Date()) {
+  return new Intl.DateTimeFormat('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  }).format(date);
+}
 
 // Connect to MongoDB
 mongoose.connect(MONGODB_URI, {
@@ -125,6 +139,7 @@ app.get('/health', (req, res) => {
 app.post('/api/track-visit', async (req, res) => {
   const { sessionId, participantName, latitude, longitude, accuracy } = req.body;
   const ipAddress = req.body.clientIp || getReqIp(req);
+  const indiaTime = getIndiaTime();
 
   const recordData = {
     sessionId: sessionId || 'default-session',
@@ -136,6 +151,7 @@ app.post('/api/track-visit', async (req, res) => {
     speed: 0,
     heading: 0,
     ipAddress,
+    indiaTime,
     createdAt: new Date()
   };
 
@@ -146,6 +162,7 @@ app.post('/api/track-visit', async (req, res) => {
         participantId: recordData.participantId,
         participantName: recordData.participantName,
         ip: ipAddress,
+        indiaTime,
         location: {
           latitude: recordData.latitude,
           longitude: recordData.longitude,
@@ -154,7 +171,7 @@ app.post('/api/track-visit', async (req, res) => {
           heading: 0
         }
       });
-      return res.status(201).json({ success: true, database: 'MongoDB', id: doc._id, ip: ipAddress, data: doc });
+      return res.status(201).json({ success: true, database: 'MongoDB', id: doc._id, ip: ipAddress, indiaTime, data: doc });
     } catch (err) {
       console.error('Error saving visit to MongoDB:', err);
       return res.status(500).json({ success: false, error: err.message });
@@ -166,6 +183,7 @@ app.post('/api/track-visit', async (req, res) => {
       participantId: recordData.participantId,
       participantName: recordData.participantName,
       ip: ipAddress,
+      indiaTime,
       location: {
         latitude: recordData.latitude,
         longitude: recordData.longitude,
@@ -174,7 +192,7 @@ app.post('/api/track-visit', async (req, res) => {
         heading: 0
       }
     });
-    return res.status(201).json({ success: true, database: 'Memory', ip: ipAddress, data: recordData });
+    return res.status(201).json({ success: true, database: 'Memory', ip: ipAddress, indiaTime, data: recordData });
   }
 });
 
@@ -201,6 +219,7 @@ app.get('/api/records', async (req, res) => {
 app.post('/api/records', async (req, res) => {
   const { sessionId, participantName, latitude, longitude, accuracy, speed, heading } = req.body;
   const clientIp = req.body.clientIp || getReqIp(req);
+  const indiaTime = getIndiaTime();
 
   if (latitude === undefined || longitude === undefined) {
     return res.status(400).json({ success: false, error: 'Latitude and Longitude are required' });
@@ -216,6 +235,7 @@ app.post('/api/records', async (req, res) => {
     speed: speed ? Number(speed) : null,
     heading: heading ? Number(heading) : null,
     ipAddress: clientIp,
+    indiaTime,
     createdAt: new Date()
   };
 
@@ -226,6 +246,7 @@ app.post('/api/records', async (req, res) => {
         participantId: 'http-recipient',
         participantName: recordData.participantName,
         ip: clientIp,
+        indiaTime,
         location: {
           latitude: recordData.latitude,
           longitude: recordData.longitude,
@@ -234,7 +255,7 @@ app.post('/api/records', async (req, res) => {
           heading: recordData.heading
         }
       });
-      return res.status(201).json({ success: true, database: 'MongoDB', id: doc._id, data: doc });
+      return res.status(201).json({ success: true, database: 'MongoDB', id: doc._id, indiaTime, data: doc });
     } catch (err) {
       console.error('Error saving to MongoDB:', err);
       return res.status(500).json({ success: false, error: err.message });
@@ -246,6 +267,7 @@ app.post('/api/records', async (req, res) => {
       participantId: 'http-recipient',
       participantName: recordData.participantName,
       ip: clientIp,
+      indiaTime,
       location: {
         latitude: recordData.latitude,
         longitude: recordData.longitude,
@@ -272,9 +294,9 @@ app.get('/api/records/export', async (req, res) => {
     rows = fallbackMemoryRecords;
   }
 
-  let csv = 'ID,Session ID,Participant Name,IP Address,Latitude,Longitude,Accuracy (m),Speed (m/s),Created At\n';
+  let csv = 'ID,Session ID,Participant Name,IP Address,Latitude,Longitude,Accuracy (m),Speed (m/s),India Time (IST),Created At UTC\n';
   rows.forEach(r => {
-    csv += `${r._id || r.id || ''},"${r.sessionId}","${r.participantName}","${r.ipAddress}",${r.latitude},${r.longitude},${r.accuracy || 0},${r.speed || 0},"${r.createdAt}"\n`;
+    csv += `${r._id || r.id || ''},"${r.sessionId}","${r.participantName}","${r.ipAddress}",${r.latitude},${r.longitude},${r.accuracy || 0},${r.speed || 0},"${r.indiaTime || getIndiaTime(r.createdAt)}","${r.createdAt}"\n`;
   });
 
   res.setHeader('Content-Type', 'text/csv');

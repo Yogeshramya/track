@@ -63,14 +63,22 @@ export default function Home() {
     });
 
     s.on('location-updated', (data) => {
-      const { participantId, participantName, ip, location } = data;
+      const { participantId, participantName, ip, location, indiaTime } = data;
       const { latitude, longitude, accuracy, speed } = location;
+
+      const currentIst = indiaTime || new Intl.DateTimeFormat('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      }).format(new Date());
 
       setTelemetry({
         latLng: `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`,
         ip: ip || '127.0.0.1',
         accuracySpeed: `±${Math.round(accuracy || 5)}m | ${speed ? (speed * 3.6).toFixed(1) : 0} km/h`,
-        timestamp: new Date().toLocaleTimeString()
+        timestamp: `${currentIst} IST`
       });
 
       const newLoc = {
@@ -89,7 +97,7 @@ export default function Home() {
       });
 
       const newDbRecord = {
-        timestamp: new Date().toLocaleTimeString(),
+        timestamp: `${currentIst} IST`,
         name: participantName || 'Mobile Participant',
         ip: ip || '127.0.0.1',
         latitude: latitude.toFixed(6),
