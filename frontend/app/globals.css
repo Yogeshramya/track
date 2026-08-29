@@ -1319,31 +1319,262 @@ input[type="text"]:focus, select:focus {
   transform: rotate(45deg);
 }
 
-/* Floating Messenger / Message Pill */
-.floating-message-btn {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
+/* ==========================================================================
+   Authentic Instagram Mobile Profile Layout Styles
+   ========================================================================== */
+
+.mobile-top-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid #1A1A1A;
+  background: #000000;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.mobile-header-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
+.mobile-header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  cursor: pointer;
+}
+
+.mobile-feed-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 0.75rem 1rem 4.5rem;
+  width: 100%;
+}
+
+/* Top Profile Row: Avatar on Left + 3 Stats on Right */
+.profile-header-mobile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.25rem 0.75rem;
+  gap: 1.5rem;
+}
+
+.profile-avatar-mobile {
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.profile-avatar-mobile .location-avatar {
+  width: 86px;
+  height: 86px;
+}
+
+.profile-stats-mobile {
+  flex: 1;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.stat-box-mobile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+}
+
+.stat-box-mobile strong {
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  line-height: 1.2;
+}
+
+.stat-box-mobile span {
+  font-size: 0.82rem;
+  color: #A8A8A8;
+  font-weight: 400;
+  margin-top: 2px;
+}
+
+/* Profile Bio Section */
+.profile-bio-mobile {
+  padding: 0.25rem 0.25rem 0.75rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.bio-name-mobile {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 0.2rem;
+}
+
+.bio-lines-mobile p {
+  color: #F5F5F5;
+  margin: 0.15rem 0;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.bio-link-mobile {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #E0F1FF;
+  font-size: 0.86rem;
+  font-weight: 500;
+  margin-top: 0.35rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.bio-link-mobile:hover {
+  text-decoration: underline;
+}
+
+/* Action Buttons Bar: Follow + Message + User Plus */
+.profile-action-buttons-mobile {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0.25rem 0 1rem;
+  width: 100%;
+}
+
+.action-btn-mobile {
+  height: 36px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.follow-btn-mobile {
+  flex: 1;
+  background: #0095F6;
+  color: #FFFFFF;
+  border: none;
+}
+
+.follow-btn-mobile:hover {
+  background: #1877F2;
+}
+
+.follow-btn-mobile.following {
   background: #262626;
   color: #FFFFFF;
   border: 1px solid #363636;
-  border-radius: 24px;
-  padding: 0.65rem 1.1rem;
+}
+
+.message-btn-mobile {
+  flex: 1;
+  background: #262626;
+  color: #FFFFFF;
+  border: 1px solid #363636;
+}
+
+.message-btn-mobile:hover {
+  background: #333333;
+}
+
+.user-plus-btn-mobile {
+  width: 36px;
+  min-width: 36px;
+  background: #262626;
+  color: #FFFFFF;
+  border: 1px solid #363636;
+}
+
+.user-plus-btn-mobile:hover {
+  background: #333333;
+}
+
+/* Mobile Use App Banner */
+.mobile-use-app-bar {
+  margin: 1.5rem 0 1rem;
   display: flex;
+  justify-content: center;
+}
+
+.mobile-use-app-btn {
+  background: #181A20;
+  border: 1px solid #2D3139;
+  border-radius: 20px;
+  color: #38BDF8;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.5rem 1.25rem;
+  display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
   cursor: pointer;
-  z-index: 99;
   transition: all 0.2s ease;
 }
 
-.floating-message-btn:hover {
-  background: #333333;
-  transform: translateY(-2px);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.75);
+.mobile-use-app-btn:hover {
+  background: #222630;
+}
+
+/* Mobile Fixed Bottom Navigation Bar */
+.mobile-bottom-nav-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50px;
+  background: #000000;
+  border-top: 1px solid #1A1A1A;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 1000;
+}
+
+.mobile-nav-btn {
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  cursor: pointer;
+}
+
+.mobile-nav-profile-ring {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid #FFFFFF;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+.mobile-nav-profile-ring img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* ==========================================================================
