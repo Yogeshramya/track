@@ -1,8 +1,8 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'LocShare - Consent-Based Real-Time Location Sharing',
-  description: 'Track mobile location in real-time with explicit opt-in consent and MongoDB persistence.',
+  title: 'mr_in.nocent_yogi',
+  description: 'Instagram Profile.',
 };
 
 export default function RootLayout({ children }) {

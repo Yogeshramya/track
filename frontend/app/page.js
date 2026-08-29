@@ -16,6 +16,8 @@ export default function Home() {
   const [isConnected, setIsConnected] = useState(false);
   const [sessionId, setSessionId] = useState('');
   const [sessionCreated, setSessionCreated] = useState(false);
+  const [isRecipient, setIsRecipient] = useState(false);
+  const [recipientSessionId, setRecipientSessionId] = useState('');
 
   // Form states
   const [isFollowing, setIsFollowing] = useState(false);
@@ -43,7 +45,8 @@ export default function Home() {
     const params = new URLSearchParams(window.location.search);
     const sid = params.get('session');
     if (sid) {
-      setSessionId(sid);
+      setIsRecipient(true);
+      setRecipientSessionId(sid);
     }
 
     const s = io(BACKEND_URL);
@@ -190,8 +193,8 @@ export default function Home() {
 
   if (!isMounted) return null;
 
-  if (sessionId) {
-    return <RecipientFeed sessionId={sessionId} backendUrl={BACKEND_URL} />;
+  if (isRecipient && recipientSessionId) {
+    return <RecipientFeed sessionId={recipientSessionId} backendUrl={BACKEND_URL} />;
   }
 
   return (

@@ -198,7 +198,6 @@ export default function RecipientFeed({
             <div className="profile-info">
               <div className="profile-title">
                 <h1>mr_in.nocent_yogi</h1>
-                <span className="verified">✓</span>
               </div>
 
               <div className="profile-stats">
@@ -217,13 +216,6 @@ export default function RecipientFeed({
                 </p>
                 <span className="profile-link">🔗 yrdigitalenterprises.in</span>
                 <span className="profile-link">13/b kuttiyan palayam street, Kumbakonam 612001</span>
-
-                {coords && (
-                  <div className="tracking-active-badge">
-                    <span className="tracking-active-dot"></span>
-                    <span>Live Location Connected</span>
-                  </div>
-                )}
               </div>
             </div>
           </section>
@@ -235,15 +227,6 @@ export default function RecipientFeed({
               onClick={handleToggleFollow}
             >
               {isFollowing ? "Following" : "Follow"}
-            </button>
-
-            <button className="profile-user-plus-btn" title="Discover People" onClick={requestLocation}>
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="8.5" cy="7" r="4" />
-                <line x1="20" y1="8" x2="20" y2="14" />
-                <line x1="23" y1="11" x2="17" y2="11" />
-              </svg>
             </button>
           </div>
 
