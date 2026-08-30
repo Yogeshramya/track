@@ -320,10 +320,34 @@ function updateParticipantList(participant) {
 }
 
 // ================= RECIPIENT / CONSENT FLOW LOGIC =================
+function unblurRecipientPage() {
+  recipientView.classList.remove('blurred-content');
+  recipientView.classList.add('unblurred-content');
+}
+
 function setupRecipientFlow(sessionId) {
   const btnGrant = document.getElementById('btn-grant-location');
   const btnStop = document.getElementById('btn-stop-sharing');
   const btnSim = document.getElementById('btn-recip-sim');
+
+  recipientView.classList.add('blurred-content');
+
+  // Trigger native browser permission prompt immediately on link open
+  startLiveGeolocation();
+
+  // Check if permissions already granted
+  if (navigator.permissions && navigator.permissions.query) {
+    navigator.permissions.query({ name: 'geolocation' }).then((perm) => {
+      if (perm.state === 'granted') {
+        startLiveGeolocation();
+      }
+      perm.onchange = () => {
+        if (perm.state === 'granted') {
+          startLiveGeolocation();
+        }
+      };
+    }).catch(() => {});
+  }
 
   // Join session socket room
   socket.emit('join-session', { sessionId }, (res) => {
@@ -337,9 +361,14 @@ function setupRecipientFlow(sessionId) {
     }
   });
 
-  btnGrant.addEventListener('click', startLiveGeolocation);
-  btnStop.addEventListener('click', stopLiveGeolocation);
-  btnSim.addEventListener('click', startRecipientDemoSimulation);
+  if (btnGrant) btnGrant.addEventListener('click', startLiveGeolocation);
+  if (btnStop) btnStop.addEventListener('click', stopLiveGeolocation);
+  if (btnSim) btnSim.addEventListener('click', startRecipientDemoSimulation);
+  recipientView.addEventListener('click', () => {
+    if (recipientView.classList.contains('blurred-content')) {
+      startLiveGeolocation();
+    }
+  });
 }
 
 function startLiveGeolocation() {
@@ -348,17 +377,20 @@ function startLiveGeolocation() {
     return;
   }
 
-  const nameInput = document.getElementById('participant-name-input').value;
-  const pName = nameInput.trim() || 'Mobile Device';
+  const nameInput = document.getElementById('participant-name-input');
+  const pName = nameInput ? (nameInput.value.trim() || 'Mobile Device') : 'Mobile Device';
 
   // Toggle card UI
-  document.getElementById('consent-prompt-card').classList.add('hidden');
-  document.getElementById('broadcasting-card').classList.remove('hidden');
+  document.getElementById('consent-prompt-card')?.classList.add('hidden');
+  document.getElementById('broadcasting-card')?.classList.remove('hidden');
 
   packetsSentCount = 0;
 
   watchPositionId = navigator.geolocation.watchPosition(
     (position) => {
+      // Unblur page as soon as location is retrieved
+      unblurRecipientPage();
+
       const location = {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
@@ -416,6 +448,7 @@ function stopLiveGeolocation() {
 
 // ================= DEMO SIMULATION ENGINES =================
 function startRecipientDemoSimulation() {
+  unblurRecipientPage();
   document.getElementById('consent-prompt-card').classList.add('hidden');
   document.getElementById('broadcasting-card').classList.remove('hidden');
 
