@@ -598,6 +598,58 @@ body {
   color: white;
 }
 
+/* Database Card Header Actions */
+.refresh-table-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #E2E8F0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.refresh-table-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #FFFFFF;
+}
+
+.refresh-table-btn:active {
+  transform: scale(0.96);
+}
+
+.spin-icon {
+  animation: spinRecord 0.75s linear infinite;
+}
+
+@keyframes spinRecord {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.export-button {
+  display: inline-flex;
+  align-items: center;
+  background: #0095F6;
+  color: #FFFFFF;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.export-button:hover {
+  background: #1877F2;
+}
+
 .story-ring svg {
   width: 28px;
   height: 28px;

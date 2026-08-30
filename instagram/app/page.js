@@ -47,10 +47,51 @@ export default function Home() {
     timestamp: 'Awaiting signal'
   });
   const [dbRecords, setDbRecords] = useState([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const qrCanvasRef = useRef(null);
   const simIntervalRef = useRef(null);
   const activeSessionIdRef = useRef('');
+
+  const handleRefreshRecords = async () => {
+    setIsRefreshing(true);
+    try {
+      const currentBackend = getBackendUrl();
+      const currentSid = activeSessionIdRef.current || sessionId;
+      const url = currentSid
+        ? `${currentBackend}/api/records?sessionId=${currentSid}`
+        : `${currentBackend}/api/records`;
+
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (data && data.data && Array.isArray(data.data)) {
+        const mapped = data.data.map((r) => ({
+          timestamp: r.indiaTime || 'Recently',
+          title: r.sessionTitle || r.purpose || sessionTitle || 'My Mobile Location Request',
+          name: r.participantName || 'Mobile Recipient',
+          ip: r.ipAddress || '127.0.0.1',
+          latitude: Number(r.latitude).toFixed(6),
+          longitude: Number(r.longitude).toFixed(6),
+          accuracy: r.accuracy ? `±${Math.round(r.accuracy)}m` : '±5m'
+        }));
+        setDbRecords(mapped);
+
+        if (mapped.length > 0) {
+          const latest = mapped[0];
+          setTelemetry({
+            latLng: `${latest.latitude}, ${latest.longitude}`,
+            ip: latest.ip,
+            accuracySpeed: `${latest.accuracy} | 0 km/h`,
+            timestamp: latest.timestamp
+          });
+        }
+      }
+    } catch (_) {
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 400);
+    }
+  };
 
   useEffect(() => {
     setIsMounted(true);
@@ -503,9 +544,32 @@ export default function Home() {
                       <strong>MongoDB Live Records</strong>
                       <span>{dbRecords.length} Saved in Session</span>
                     </div>
-                    <a href={`${BACKEND_URL}/api/records/export`} target="_blank" rel="noreferrer" className="export-button">
-                      Export CSV
-                    </a>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <button
+                        onClick={handleRefreshRecords}
+                        disabled={isRefreshing}
+                        className="refresh-table-btn"
+                        title="Fetch latest records from database"
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          width="14"
+                          height="14"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          className={isRefreshing ? "spin-icon" : ""}
+                        >
+                          <path d="M23 4v6h-6" />
+                          <path d="M1 20v-6h6" />
+                          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                        </svg>
+                        <span>{isRefreshing ? "Fetching..." : "Refresh"}</span>
+                      </button>
+                      <a href={`${BACKEND_URL}/api/records/export`} target="_blank" rel="noreferrer" className="export-button">
+                        Export CSV
+                      </a>
+                    </div>
                   </div>
 
                   <div className="table-responsive">
