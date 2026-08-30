@@ -13,9 +13,28 @@ const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://admin:Yogesh%400405@cluster0.wkrw3fv.mongodb.net/track';
 let isMongoConnected = false;
 const fallbackMemoryRecords = [];
+const fallbackMemorySessions = [];
+
+const SessionSchema = new mongoose.Schema({
+  sessionId: { type: String, required: true, unique: true, index: true },
+  title: { type: String, default: 'Live Location Session' },
+  purpose: { type: String, default: 'General' },
+  durationMinutes: { type: Number, default: 60 },
+  shareUrl: String,
+  localUrl: String,
+  meetupLat: Number,
+  meetupLng: Number,
+  hostIp: String,
+  indiaTime: String,
+  createdAt: { type: Date, default: Date.now },
+  expireTime: { type: Date }
+});
+
+const Session = mongoose.models.Session || mongoose.model('Session', SessionSchema);
 
 const LocationRecordSchema = new mongoose.Schema({
   sessionId: { type: String, required: true, index: true },
+  sessionTitle: { type: String, default: 'Live Location Session' },
   participantId: String,
   participantName: String,
   latitude: { type: Number, required: true },
@@ -301,6 +320,58 @@ async function startServer() {
     }
   });
 
+  // API Endpoint: Query all generated link sessions from MongoDB
+  app.get('/api/sessions', async (req, res) => {
+    if (isMongoConnected) {
+      try {
+        const sessions = await Session.find().sort({ createdAt: -1 });
+        const recordCounts = await LocationRecord.aggregate([
+          { $group: { _id: '$sessionId', count: { $sum: 1 } } }
+        ]);
+        const countMap = new Map(recordCounts.map(r => [r._id, r.count]));
+
+        const enriched = sessions.map(s => ({
+          ...s.toObject(),
+          recordCount: countMap.get(s.sessionId) || 0
+        }));
+
+        return res.json({ success: true, count: enriched.length, database: 'MongoDB', data: enriched });
+      } catch (err) {
+        return res.status(500).json({ error: err.message });
+      }
+    } else {
+      return res.json({ success: true, count: fallbackMemorySessions.length, database: 'Memory', data: fallbackMemorySessions });
+    }
+  });
+
+  // API Endpoint: Query specific session metadata & its location records
+  app.get('/api/sessions/:sessionId', async (req, res) => {
+    const { sessionId } = req.params;
+    if (isMongoConnected) {
+      try {
+        const sessionDoc = await Session.findOne({ sessionId });
+        const records = await LocationRecord.find({ sessionId }).sort({ createdAt: -1 });
+        return res.json({
+          success: true,
+          session: sessionDoc,
+          recordCount: records.length,
+          records
+        });
+      } catch (err) {
+        return res.status(500).json({ error: err.message });
+      }
+    } else {
+      const sessionDoc = fallbackMemorySessions.find(s => s.sessionId === sessionId);
+      const records = fallbackMemoryRecords.filter(r => r.sessionId === sessionId);
+      return res.json({
+        success: true,
+        session: sessionDoc || null,
+        recordCount: records.length,
+        records
+      });
+    }
+  });
+
   // API Endpoint: Query location history from MongoDB
   app.get('/api/records', async (req, res) => {
     const sessionId = req.query.sessionId;
@@ -320,18 +391,22 @@ async function startServer() {
     }
   });
 
-  // API Endpoint: Export CSV from MongoDB
+  // API Endpoint: Export CSV from MongoDB as a separate file per session or all sessions
   app.get('/api/records/export', async (req, res) => {
+    const targetSessionId = req.query.sessionId;
     let rows = [];
 
     if (isMongoConnected) {
       try {
-        rows = await LocationRecord.find().sort({ createdAt: -1 });
+        const filter = targetSessionId ? { sessionId: targetSessionId } : {};
+        rows = await LocationRecord.find(filter).sort({ createdAt: -1 });
       } catch (err) {
         return res.status(500).send('Error querying MongoDB for export');
       }
     } else {
-      rows = fallbackMemoryRecords;
+      rows = targetSessionId
+        ? fallbackMemoryRecords.filter(r => r.sessionId === targetSessionId)
+        : fallbackMemoryRecords;
     }
 
     let csv = 'ID,Session ID,Participant Name,IP Address,Latitude,Longitude,Accuracy (m),Speed (m/s),Created At\n';
@@ -339,8 +414,9 @@ async function startServer() {
       csv += `${r._id || r.id || ''},"${r.sessionId}","${r.participantName}","${r.ipAddress}",${r.latitude},${r.longitude},${r.accuracy || 0},${r.speed || 0},"${r.createdAt}"\n`;
     });
 
+    const filename = targetSessionId ? `session_${targetSessionId}_location_records.csv` : `mongodb_all_sessions_records.csv`;
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="mongodb_location_history.csv"');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.status(200).send(csv);
   });
 
@@ -351,26 +427,65 @@ async function startServer() {
     const clientIp = getClientIp(socket);
     console.log(`[Socket Connected] ID: ${socket.id} | IP: ${clientIp}`);
 
-    socket.on('create-session', (sessionData, callback) => {
+    socket.on('create-session', async (sessionData, callback) => {
       const sessionId = Math.random().toString(36).substring(2, 8).toUpperCase();
-      const sessionInfo = {
-        id: sessionId,
-        hostSocketId: socket.id,
-        title: sessionData.title || 'Live Location Session',
-        durationMinutes: sessionData.durationMinutes || 60,
-        createdTime: Date.now(),
-        expireTime: Date.now() + (sessionData.durationMinutes || 60) * 60 * 1000,
-        participants: new Map()
-      };
-
-      activeSessions.set(sessionId, sessionInfo);
-      socket.join(sessionId);
+      const duration = parseInt(sessionData.durationMinutes || 60, 10);
+      const expireTime = new Date(Date.now() + duration * 60 * 1000);
+      const indiaTime = getIndiaTime();
 
       const requestHost = socket.handshake.headers.host;
       const protocol = socket.handshake.headers['x-forwarded-proto'] || 'http';
       const baseOrigin = sessionData.origin || (requestHost ? `${protocol}://${requestHost}` : `http://${localIp}:${PORT}`);
       const hostUrl = `${baseOrigin}/?session=${sessionId}`;
       const localUrl = `http://localhost:${PORT}/?session=${sessionId}`;
+
+      const sessionInfo = {
+        id: sessionId,
+        sessionId,
+        hostSocketId: socket.id,
+        title: sessionData.title || 'Live Location Session',
+        purpose: sessionData.title || 'General',
+        durationMinutes: duration,
+        shareUrl: hostUrl,
+        localUrl,
+        meetupLat: sessionData.meetupLat ? Number(sessionData.meetupLat) : null,
+        meetupLng: sessionData.meetupLng ? Number(sessionData.meetupLng) : null,
+        hostIp: clientIp,
+        indiaTime,
+        createdTime: Date.now(),
+        createdAt: new Date(),
+        expireTime,
+        participants: new Map()
+      };
+
+      activeSessions.set(sessionId, sessionInfo);
+      socket.join(sessionId);
+
+      // Save to MongoDB as a dedicated session document
+      if (isMongoConnected) {
+        try {
+          await Session.create({
+            sessionId,
+            title: sessionInfo.title,
+            purpose: sessionInfo.purpose,
+            durationMinutes: duration,
+            shareUrl: hostUrl,
+            localUrl,
+            meetupLat: sessionInfo.meetupLat,
+            meetupLng: sessionInfo.meetupLng,
+            hostIp: clientIp,
+            indiaTime,
+            createdAt: new Date(),
+            expireTime
+          });
+          console.log(`📁 [MongoDB Session Created] Session ID: ${sessionId}`);
+        } catch (err) {
+          console.error('Error saving session to MongoDB:', err.message);
+        }
+      } else {
+        fallbackMemorySessions.unshift({ ...sessionInfo, participants: undefined });
+        if (fallbackMemorySessions.length > 200) fallbackMemorySessions.pop();
+      }
 
       if (callback) {
         callback({

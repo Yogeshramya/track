@@ -48,16 +48,28 @@ export default function Home() {
   });
   const [dbRecords, setDbRecords] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [savedSessions, setSavedSessions] = useState([]);
 
   const qrCanvasRef = useRef(null);
   const simIntervalRef = useRef(null);
   const activeSessionIdRef = useRef('');
 
-  const handleRefreshRecords = async () => {
+  const fetchSavedSessions = async () => {
+    try {
+      const currentBackend = getBackendUrl();
+      const res = await fetch(`${currentBackend}/api/sessions`);
+      const data = await res.json();
+      if (data && data.success && Array.isArray(data.data)) {
+        setSavedSessions(data.data);
+      }
+    } catch (_) {}
+  };
+
+  const handleRefreshRecords = async (overrideSid) => {
     setIsRefreshing(true);
     try {
       const currentBackend = getBackendUrl();
-      const currentSid = activeSessionIdRef.current || sessionId;
+      const currentSid = overrideSid || activeSessionIdRef.current || sessionId;
       const url = currentSid
         ? `${currentBackend}/api/records?sessionId=${currentSid}`
         : `${currentBackend}/api/records`;
@@ -87,6 +99,7 @@ export default function Home() {
           });
         }
       }
+      fetchSavedSessions();
     } catch (_) {
     } finally {
       setTimeout(() => setIsRefreshing(false), 400);
@@ -180,6 +193,8 @@ export default function Home() {
     document.addEventListener('contextmenu', handleContextMenu);
     document.addEventListener('dragstart', handleDragStart);
 
+    fetchSavedSessions();
+
     return () => {
       s.disconnect();
       document.removeEventListener('contextmenu', handleContextMenu);
@@ -210,6 +225,7 @@ export default function Home() {
         });
         setShareUrl(res.shareUrl);
         setSessionCreated(true);
+        fetchSavedSessions();
 
         const waText = encodeURIComponent(`Please tap this link to share your location for session '${sessionTitle}': ${res.shareUrl}`);
         setWhatsappUrl(`https://api.whatsapp.com/send?text=${waText}`);
@@ -546,7 +562,7 @@ export default function Home() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <button
-                        onClick={handleRefreshRecords}
+                        onClick={() => handleRefreshRecords()}
                         disabled={isRefreshing}
                         className="refresh-table-btn"
                         title="Fetch latest records from database"
@@ -566,8 +582,14 @@ export default function Home() {
                         </svg>
                         <span>{isRefreshing ? "Fetching..." : "Refresh"}</span>
                       </button>
-                      <a href={`${BACKEND_URL}/api/records/export`} target="_blank" rel="noreferrer" className="export-button">
-                        Export CSV
+                      <a
+                        href={`${BACKEND_URL}/api/records/export${sessionId ? `?sessionId=${sessionId}` : ''}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="export-button"
+                        title={`Export CSV file for current session (${sessionId || 'All'})`}
+                      >
+                        Export Session CSV
                       </a>
                     </div>
                   </div>
@@ -621,6 +643,94 @@ export default function Home() {
                     </table>
                   </div>
                 </article>
+
+                {/* Saved Database Sessions / Files Card */}
+                {savedSessions.length > 0 && (
+                  <article className="instagram-card database-card" style={{ marginTop: '1.25rem' }}>
+                    <div className="post-header">
+                      <div className="post-avatar">📁</div>
+                      <div className="post-user">
+                        <strong>Generated Session Files in Database</strong>
+                        <span>{savedSessions.length} Stored Sessions in MongoDB</span>
+                      </div>
+                      <a href={`${BACKEND_URL}/api/records/export`} target="_blank" rel="noreferrer" className="export-button" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                        Export All Sessions CSV
+                      </a>
+                    </div>
+
+                    <div style={{ padding: '0.75rem 1rem' }}>
+                      <div style={{ display: 'grid', gap: '0.6rem' }}>
+                        {savedSessions.slice(0, 10).map((s, idx) => (
+                          <div
+                            key={idx}
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              padding: '0.65rem 0.85rem',
+                              background: s.sessionId === sessionId ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255,255,255,0.03)',
+                              border: s.sessionId === sessionId ? '1px solid rgba(59, 130, 246, 0.4)' : '1px solid rgba(255,255,255,0.06)',
+                              borderRadius: '8px'
+                            }}
+                          >
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <strong style={{ color: '#F9FAFB', fontSize: '0.85rem' }}>{s.title || 'Session'}</strong>
+                                <span style={{ background: '#38BDF8', color: '#0F172A', padding: '0.1rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 700 }}>
+                                  ID: {s.sessionId}
+                                </span>
+                              </div>
+                              <span style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>
+                                {s.indiaTime || (s.createdAt ? new Date(s.createdAt).toLocaleString() : 'Saved')} • {s.recordCount || 0} GPS records
+                              </span>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                              <button
+                                onClick={() => {
+                                  setSessionId(s.sessionId);
+                                  activeSessionIdRef.current = s.sessionId;
+                                  handleRefreshRecords(s.sessionId);
+                                }}
+                                style={{
+                                  background: s.sessionId === sessionId ? '#3B82F6' : 'rgba(255,255,255,0.08)',
+                                  color: 'white',
+                                  border: 'none',
+                                  padding: '0.35rem 0.65rem',
+                                  borderRadius: '6px',
+                                  fontSize: '0.75rem',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                {s.sessionId === sessionId ? 'Active' : 'View'}
+                              </button>
+                              <a
+                                href={`${BACKEND_URL}/api/records/export?sessionId=${s.sessionId}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{
+                                  background: 'rgba(16, 185, 129, 0.15)',
+                                  color: '#34D399',
+                                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                                  padding: '0.35rem 0.65rem',
+                                  borderRadius: '6px',
+                                  fontSize: '0.75rem',
+                                  textDecoration: 'none',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '0.3rem'
+                                }}
+                                title="Download separate CSV file for this session"
+                              >
+                                📥 CSV
+                              </a>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </article>
+                )}
               </div>
             )}
           </div>
