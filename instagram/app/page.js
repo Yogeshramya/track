@@ -9,7 +9,18 @@ import Sidebar from '../components/Sidebar';
 
 const MapView = dynamic(() => import('../components/MapView'), { ssr: false });
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';
+const getBackendUrl = () => {
+  if (process.env.NEXT_PUBLIC_SOCKET_URL) return process.env.NEXT_PUBLIC_SOCKET_URL;
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host && host !== 'localhost' && host !== '127.0.0.1') {
+      return `${window.location.protocol}//${host}:5000`;
+    }
+  }
+  return 'http://localhost:5000';
+};
+
+const BACKEND_URL = typeof window !== 'undefined' ? getBackendUrl() : (process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000');
 
 export default function Home() {
   const [isMounted, setIsMounted] = useState(false);
@@ -50,20 +61,40 @@ export default function Home() {
       setRecipientSessionId(sid);
     }
 
-    const s = io(BACKEND_URL);
+    const currentBackend = getBackendUrl();
+    const s = io(currentBackend);
     setSocket(s);
 
     s.on('connect', () => {
       setIsConnected(true);
-      console.log('Connected to backend at:', BACKEND_URL);
     });
 
     s.on('disconnect', () => {
       setIsConnected(false);
     });
 
+    // Load initial MongoDB history
+    fetch(`${currentBackend}/api/records`)
+      .then((res) => res.json())
+      .then((res) => {
+        if (res && res.data && Array.isArray(res.data)) {
+          setDbRecords(
+            res.data.map((r) => ({
+              timestamp: r.indiaTime || 'Recently',
+              title: r.sessionTitle || r.purpose || 'My Mobile Location Request',
+              name: r.participantName || 'Mobile Recipient',
+              ip: r.ipAddress || '127.0.0.1',
+              latitude: Number(r.latitude).toFixed(6),
+              longitude: Number(r.longitude).toFixed(6),
+              accuracy: r.accuracy ? `±${Math.round(r.accuracy)}m` : '±5m'
+            }))
+          );
+        }
+      })
+      .catch(() => {});
+
     s.on('location-updated', (data) => {
-      const { participantId, participantName, ip, location, indiaTime } = data;
+      const { participantId, participantName, ip, location, indiaTime, sessionTitle: recTitle } = data;
       const { latitude, longitude, accuracy, speed } = location;
 
       const currentIst = indiaTime || new Intl.DateTimeFormat('en-IN', {
@@ -98,6 +129,7 @@ export default function Home() {
 
       const newDbRecord = {
         timestamp: `${currentIst} IST`,
+        title: recTitle || sessionTitle || 'My Mobile Location Request',
         name: participantName || 'Mobile Participant',
         ip: ip || '127.0.0.1',
         latitude: latitude.toFixed(6),
@@ -105,7 +137,7 @@ export default function Home() {
         accuracy: accuracy ? `±${Math.round(accuracy)}m` : '±5m'
       };
 
-      setDbRecords((prev) => [newDbRecord, ...prev.slice(0, 25)]);
+      setDbRecords((prev) => [newDbRecord, ...prev.slice(0, 49)]);
     });
 
     const handleContextMenu = (e) => {
@@ -131,10 +163,12 @@ export default function Home() {
   const handleCreateSession = () => {
     if (!socket) return;
 
+    const currentBackend = getBackendUrl();
     socket.emit('create-session', {
       title: sessionTitle,
       durationMinutes: parseInt(sessionDuration, 10),
-      origin: window.location.origin
+      origin: window.location.origin,
+      backendUrl: currentBackend
     }, (res) => {
       if (res && res.success) {
         setSessionId(res.sessionId);
@@ -484,6 +518,7 @@ export default function Home() {
                       <thead>
                         <tr>
                           <th>Time (IST)</th>
+                          <th>Purpose / Session Title</th>
                           <th>Device</th>
                           <th>IP</th>
                           <th>Latitude</th>
@@ -494,11 +529,12 @@ export default function Home() {
                       </thead>
                       <tbody>
                         {dbRecords.length === 0 ? (
-                          <tr><td colSpan={7} style={{ color: '#737373', textAlign: 'center' }}>Awaiting device connection and GPS telemetry...</td></tr>
+                          <tr><td colSpan={8} style={{ color: '#737373', textAlign: 'center' }}>Awaiting device connection and GPS telemetry...</td></tr>
                         ) : (
                           dbRecords.map((r, i) => (
                             <tr key={i}>
                               <td><span style={{ color: '#A8A8A8', fontSize: '0.75rem' }}>{r.timestamp}</span></td>
+                              <td><strong style={{ color: '#38BDF8' }}>{r.title || sessionTitle}</strong></td>
                               <td><strong>{r.name}</strong></td>
                               <td><span className="ip-badge">{r.ip}</span></td>
                               <td style={{ color: '#10B981', fontFamily: 'monospace' }}>{r.latitude}</td>

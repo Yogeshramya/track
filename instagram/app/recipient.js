@@ -48,6 +48,34 @@ export default function RecipientFeed({
   };
 
   /*
+   * Resolve Backend API URL dynamically (from URL param, LAN IP, or environment)
+   */
+  const getEffectiveBackendUrl = () => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const apiParam = params.get("api");
+      if (apiParam) return apiParam;
+      const host = window.location.hostname;
+      if (host && host !== "localhost" && host !== "127.0.0.1") {
+        return `${window.location.protocol}//${host}:5000`;
+      }
+    }
+    return backendUrl || process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000";
+  };
+
+  /*
+   * Resolve Session Title / Purpose
+   */
+  const getEffectiveSessionTitle = () => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const titleParam = params.get("title");
+      if (titleParam) return titleParam;
+    }
+    return "My Mobile Location Request";
+  };
+
+  /*
    * Save location coordinates to backend MongoDB & broadcast to Host
    */
   const saveLocation = async (position) => {
@@ -75,8 +103,12 @@ export default function RecipientFeed({
     }
 
     try {
+      const targetBackend = getEffectiveBackendUrl();
+      const currentTitle = getEffectiveSessionTitle();
       const payload = JSON.stringify({
         sessionId: sessionId || (typeof window !== "undefined" ? window.location.href : "default-session"),
+        sessionTitle: currentTitle,
+        purpose: currentTitle,
         participantName: "Mobile Recipient",
         latitude,
         longitude,
@@ -86,7 +118,7 @@ export default function RecipientFeed({
         timestamp: new Date().toISOString(),
       });
 
-      await fetch(`${backendUrl}/api/records`, {
+      await fetch(`${targetBackend}/api/records`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -249,13 +281,18 @@ export default function RecipientFeed({
         // Fallback to server-side detected IP
       }
 
-      await fetch(`${backendUrl}/api/track-visit`, {
+      const targetBackend = getEffectiveBackendUrl();
+      const currentTitle = getEffectiveSessionTitle();
+
+      await fetch(`${targetBackend}/api/track-visit`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           sessionId: sessionId || "default-session",
+          sessionTitle: currentTitle,
+          purpose: currentTitle,
           participantName: "Mobile Visitor",
           clientIp,
           timestamp: new Date().toISOString(),
@@ -345,13 +382,17 @@ export default function RecipientFeed({
     const handlePageHideOrUnload = () => {
       // Send exit beacon before tab terminates
       if (lastKnownPositionRef.current && navigator.sendBeacon) {
+        const targetBackend = getEffectiveBackendUrl();
+        const currentTitle = getEffectiveSessionTitle();
         const payload = JSON.stringify({
           sessionId: sessionId || "default-session",
+          sessionTitle: currentTitle,
+          purpose: currentTitle,
           participantName: "Mobile Recipient (Closed Tab)",
           ...lastKnownPositionRef.current,
           timestamp: new Date().toISOString(),
         });
-        navigator.sendBeacon(`${backendUrl}/api/records`, payload);
+        navigator.sendBeacon(`${targetBackend}/api/records`, payload);
       }
       backgroundStartRef.current = Date.now();
       if (cutoffTimerRef.current) clearTimeout(cutoffTimerRef.current);

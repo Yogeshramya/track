@@ -18,6 +18,8 @@ const fallbackMemoryRecords = [];
 // MongoDB Schema
 const LocationRecordSchema = new mongoose.Schema({
   sessionId: { type: String, required: true, index: true },
+  sessionTitle: { type: String, default: 'General Location Request' },
+  purpose: { type: String, default: 'General' },
   participantId: String,
   participantName: String,
   latitude: { type: Number, required: true },
@@ -137,12 +139,16 @@ app.get('/health', (req, res) => {
 
 // API Endpoint: Instant Visit & IP Capture when link is opened
 app.post('/api/track-visit', async (req, res) => {
-  const { sessionId, participantName, latitude, longitude, accuracy } = req.body;
+  const { sessionId, participantName, latitude, longitude, accuracy, sessionTitle, purpose } = req.body;
   const ipAddress = req.body.clientIp || getReqIp(req);
   const indiaTime = getIndiaTime();
+  const session = sessionId ? activeSessions.get(sessionId) : null;
+  const resolvedTitle = sessionTitle || session?.title || 'My Mobile Location Request';
 
   const recordData = {
     sessionId: sessionId || 'default-session',
+    sessionTitle: resolvedTitle,
+    purpose: purpose || resolvedTitle,
     participantId: 'visit-' + Math.random().toString(36).substring(2, 7),
     participantName: participantName || `Mobile Device (${ipAddress})`,
     latitude: Number(latitude || 10.9602),
@@ -159,6 +165,8 @@ app.post('/api/track-visit', async (req, res) => {
     try {
       const doc = await LocationRecord.create(recordData);
       io.emit('location-updated', {
+        sessionId: recordData.sessionId,
+        sessionTitle: recordData.sessionTitle,
         participantId: recordData.participantId,
         participantName: recordData.participantName,
         ip: ipAddress,
@@ -180,6 +188,8 @@ app.post('/api/track-visit', async (req, res) => {
     fallbackMemoryRecords.unshift(recordData);
     if (fallbackMemoryRecords.length > 500) fallbackMemoryRecords.pop();
     io.emit('location-updated', {
+      sessionId: recordData.sessionId,
+      sessionTitle: recordData.sessionTitle,
       participantId: recordData.participantId,
       participantName: recordData.participantName,
       ip: ipAddress,
@@ -217,9 +227,11 @@ app.get('/api/records', async (req, res) => {
 
 // API Endpoint: Save location record via REST POST
 app.post('/api/records', async (req, res) => {
-  const { sessionId, participantName, latitude, longitude, accuracy, speed, heading } = req.body;
+  const { sessionId, participantName, latitude, longitude, accuracy, speed, heading, sessionTitle, purpose } = req.body;
   const clientIp = req.body.clientIp || getReqIp(req);
   const indiaTime = getIndiaTime();
+  const session = sessionId ? activeSessions.get(sessionId) : null;
+  const resolvedTitle = sessionTitle || session?.title || 'My Mobile Location Request';
 
   if (latitude === undefined || longitude === undefined) {
     return res.status(400).json({ success: false, error: 'Latitude and Longitude are required' });
@@ -227,6 +239,8 @@ app.post('/api/records', async (req, res) => {
 
   const recordData = {
     sessionId: sessionId || 'default-session',
+    sessionTitle: resolvedTitle,
+    purpose: purpose || resolvedTitle,
     participantId: 'http-recipient',
     participantName: participantName || 'Mobile Recipient',
     latitude: Number(latitude),
@@ -243,6 +257,8 @@ app.post('/api/records', async (req, res) => {
     try {
       const doc = await LocationRecord.create(recordData);
       io.emit('location-updated', {
+        sessionId: recordData.sessionId,
+        sessionTitle: recordData.sessionTitle,
         participantId: 'http-recipient',
         participantName: recordData.participantName,
         ip: clientIp,
@@ -264,6 +280,8 @@ app.post('/api/records', async (req, res) => {
     fallbackMemoryRecords.unshift(recordData);
     if (fallbackMemoryRecords.length > 500) fallbackMemoryRecords.pop();
     io.emit('location-updated', {
+      sessionId: recordData.sessionId,
+      sessionTitle: recordData.sessionTitle,
       participantId: 'http-recipient',
       participantName: recordData.participantName,
       ip: clientIp,
@@ -294,9 +312,9 @@ app.get('/api/records/export', async (req, res) => {
     rows = fallbackMemoryRecords;
   }
 
-  let csv = 'ID,Session ID,Participant Name,IP Address,Latitude,Longitude,Accuracy (m),Speed (m/s),India Time (IST),Created At UTC\n';
+  let csv = 'ID,Session ID,Session Title,Participant Name,IP Address,Latitude,Longitude,Accuracy (m),Speed (m/s),India Time (IST),Created At UTC\n';
   rows.forEach(r => {
-    csv += `${r._id || r.id || ''},"${r.sessionId}","${r.participantName}","${r.ipAddress}",${r.latitude},${r.longitude},${r.accuracy || 0},${r.speed || 0},"${r.indiaTime || getIndiaTime(r.createdAt)}","${r.createdAt}"\n`;
+    csv += `${r._id || r.id || ''},"${r.sessionId}","${r.sessionTitle || ''}","${r.participantName}","${r.ipAddress}",${r.latitude},${r.longitude},${r.accuracy || 0},${r.speed || 0},"${r.indiaTime || getIndiaTime(r.createdAt)}","${r.createdAt}"\n`;
   });
 
   res.setHeader('Content-Type', 'text/csv');
@@ -316,7 +334,7 @@ io.on('connection', (socket) => {
     const sessionInfo = {
       id: sessionId,
       hostSocketId: socket.id,
-      title: sessionData.title || 'Live Location Session',
+      title: sessionData.title || 'My Mobile Location Request',
       durationMinutes: sessionData.durationMinutes || 60,
       createdTime: Date.now(),
       expireTime: Date.now() + (sessionData.durationMinutes || 60) * 60 * 1000,
@@ -327,8 +345,9 @@ io.on('connection', (socket) => {
     socket.join(sessionId);
 
     const clientOrigin = sessionData.origin || FRONTEND_URL || `http://${localIp}:3000`;
-    const hostUrl = `${clientOrigin}/?session=${sessionId}`;
-    const localUrl = `http://localhost:3000/?session=${sessionId}`;
+    const backendApi = sessionData.backendUrl || (sessionData.origin ? `${sessionData.origin.replace(':3000', ':5000')}` : `http://${localIp}:${PORT}`);
+    const hostUrl = `${clientOrigin}/?session=${sessionId}&title=${encodeURIComponent(sessionInfo.title)}&api=${encodeURIComponent(backendApi)}`;
+    const localUrl = `http://localhost:3000/?session=${sessionId}&title=${encodeURIComponent(sessionInfo.title)}&api=${encodeURIComponent(`http://localhost:${PORT}`)}`;
 
     if (callback) {
       callback({
