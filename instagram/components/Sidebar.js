@@ -88,7 +88,7 @@ export default function Sidebar({ onItemClick, activeTab = "Profile" }) {
 
         <a className={`ig-nav-item ${activeTab === "Profile" ? "active" : ""}`} onClick={onItemClick}>
           <span className="ig-icon ig-nav-profile-avatar">
-            <img src="/highlights/profile.jpg" alt="Profile" />
+            <img src="https://static.vecteezy.com/system/resources/previews/024/983/914/non_2x/simple-user-default-icon-free-png.png" alt="Profile" />
           </span>
           <span className="ig-nav-label" style={{ fontWeight: 700 }}>Profile</span>
         </a>

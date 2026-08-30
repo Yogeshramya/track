@@ -1547,8 +1547,42 @@ input[type="text"]:focus, select:focus {
   border: 1px solid #363636;
 }
 
-.user-plus-btn-mobile:hover {
-  background: #333333;
+/* Mobile Top Header (Shown on mobile, hidden on desktop) */
+.mobile-top-header {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-top-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #1A1A1A;
+    position: sticky;
+    top: 0;
+    background: #000000;
+    z-index: 100;
+  }
+
+  .mobile-header-title {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: #FFFFFF;
+  }
+
+  .mobile-header-icon-btn {
+    background: none;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 4px;
+  }
 }
 
 /* Mobile Use App Banner */
@@ -1577,8 +1611,9 @@ input[type="text"]:focus, select:focus {
   background: #222630;
 }
 
-/* Mobile Fixed Bottom Navigation Bar */
+/* Mobile Fixed Bottom Navigation Bar (Hidden on large screens, shown only on mobile) */
 .mobile-bottom-nav-bar {
+  display: none;
   position: fixed;
   bottom: 0;
   left: 0;
@@ -1586,10 +1621,15 @@ input[type="text"]:focus, select:focus {
   height: 50px;
   background: #000000;
   border-top: 1px solid #1A1A1A;
-  display: flex;
   justify-content: space-around;
   align-items: center;
   z-index: 1000;
+}
+
+@media (max-width: 768px) {
+  .mobile-bottom-nav-bar {
+    display: flex;
+  }
 }
 
 .mobile-nav-btn {
@@ -1625,6 +1665,10 @@ input[type="text"]:focus, select:focus {
    ========================================================================== */
 
 @media (max-width: 768px) {
+  .ig-sidebar {
+    display: none !important;
+  }
+
   .feed-container {
     max-width: 100%;
     padding: 1rem 0.75rem 4rem;
