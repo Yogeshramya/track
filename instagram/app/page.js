@@ -50,6 +50,7 @@ export default function Home() {
 
   const qrCanvasRef = useRef(null);
   const simIntervalRef = useRef(null);
+  const activeSessionIdRef = useRef('');
 
   useEffect(() => {
     setIsMounted(true);
@@ -73,27 +74,12 @@ export default function Home() {
       setIsConnected(false);
     });
 
-    // Load initial MongoDB history
-    fetch(`${currentBackend}/api/records`)
-      .then((res) => res.json())
-      .then((res) => {
-        if (res && res.data && Array.isArray(res.data)) {
-          setDbRecords(
-            res.data.map((r) => ({
-              timestamp: r.indiaTime || 'Recently',
-              title: r.sessionTitle || r.purpose || 'My Mobile Location Request',
-              name: r.participantName || 'Mobile Recipient',
-              ip: r.ipAddress || '127.0.0.1',
-              latitude: Number(r.latitude).toFixed(6),
-              longitude: Number(r.longitude).toFixed(6),
-              accuracy: r.accuracy ? `±${Math.round(r.accuracy)}m` : '±5m'
-            }))
-          );
-        }
-      })
-      .catch(() => {});
-
     s.on('location-updated', (data) => {
+      // Only process telemetry from the active link/session
+      if (activeSessionIdRef.current && data.sessionId && data.sessionId !== activeSessionIdRef.current) {
+        return;
+      }
+
       const { participantId, participantName, ip, location, indiaTime, sessionTitle: recTitle } = data;
       const { latitude, longitude, accuracy, speed } = location;
 
@@ -172,6 +158,15 @@ export default function Home() {
     }, (res) => {
       if (res && res.success) {
         setSessionId(res.sessionId);
+        activeSessionIdRef.current = res.sessionId;
+        setDbRecords([]);
+        setActiveLocations([]);
+        setTelemetry({
+          latLng: '-- / --',
+          ip: '--',
+          accuracySpeed: '-- m | -- km/h',
+          timestamp: 'Awaiting signal'
+        });
         setShareUrl(res.shareUrl);
         setSessionCreated(true);
 
