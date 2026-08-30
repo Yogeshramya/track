@@ -20,8 +20,7 @@ export default function ReelModal({ isOpen, onClose }) {
       setProgress(0);
       if (videoRef.current) {
         videoRef.current.currentTime = 0;
-        videoRef.current.play().catch((err) => {
-          console.log("Autoplay notice:", err);
+        videoRef.current.play().catch(() => {
           // If browser policy requires user interaction for sound, mute and play
           if (videoRef.current) {
             videoRef.current.muted = true;

