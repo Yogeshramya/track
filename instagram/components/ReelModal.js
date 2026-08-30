@@ -13,36 +13,63 @@ export default function ReelModal({ isOpen, onClose }) {
   const [progress, setProgress] = useState(0);
 
   const videoRef = useRef(null);
-  const progressIntervalRef = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
       setIsPlaying(true);
       setProgress(0);
-
-      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-      progressIntervalRef.current = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 100) return 0;
-          return prev + 1;
+      if (videoRef.current) {
+        videoRef.current.currentTime = 0;
+        videoRef.current.play().catch((err) => {
+          console.log("Autoplay notice:", err);
+          // If browser policy requires user interaction for sound, mute and play
+          if (videoRef.current) {
+            videoRef.current.muted = true;
+            setIsMuted(true);
+            videoRef.current.play().catch(() => {});
+          }
         });
-      }, 150);
+      }
     } else {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
+      if (videoRef.current) {
+        videoRef.current.pause();
       }
     }
-
-    return () => {
-      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-    };
   }, [isOpen]);
 
   if (!isOpen) return null;
 
   const togglePlay = () => {
-    setIsPlaying(!isPlaying);
+    if (videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play();
+        setIsPlaying(true);
+      } else {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      }
+    } else {
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const toggleMute = (e) => {
+    e.stopPropagation();
+    if (videoRef.current) {
+      const nextMuted = !isMuted;
+      videoRef.current.muted = nextMuted;
+      setIsMuted(nextMuted);
+    } else {
+      setIsMuted(!isMuted);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current && videoRef.current.duration) {
+      const current = videoRef.current.currentTime;
+      const duration = videoRef.current.duration;
+      setProgress((current / duration) * 100);
+    }
   };
 
   const toggleLike = (e) => {
@@ -88,12 +115,21 @@ export default function ReelModal({ isOpen, onClose }) {
             <div className="reel-progress-bar" style={{ width: `${progress}%` }}></div>
           </div>
 
-          {/* Reel Media Visual */}
+          {/* Reel Video Player */}
           <div className="reel-video-container">
-            <img 
-              src="/posts/post4.png" 
-              alt="House Warming Invitation Reel" 
-              className={`reel-image-media ${isPlaying ? "reel-playing" : "reel-paused"}`}
+            <video
+              ref={videoRef}
+              src="/posts/reel.mp4"
+              poster="/posts/post4.png"
+              autoPlay
+              playsInline
+              loop
+              muted={isMuted}
+              onTimeUpdate={handleTimeUpdate}
+              className="reel-video-element"
+              controlsList="nodownload noplaybackrate nofullscreen"
+              disablePictureInPicture
+              onContextMenu={(e) => e.preventDefault()}
             />
 
             {/* Play/Pause Overlay Icon (shows when paused) */}
@@ -117,10 +153,7 @@ export default function ReelModal({ isOpen, onClose }) {
 
               <button 
                 className="reel-sound-btn" 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsMuted(!isMuted);
-                }} 
+                onClick={toggleMute} 
                 title={isMuted ? "Unmute" : "Mute"}
               >
                 {isMuted ? (
