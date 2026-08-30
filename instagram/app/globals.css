@@ -1920,103 +1920,127 @@ input[type="text"]:focus, select:focus {
   color: #FFFFFF;
 }
 
-.blur-modal-btn {
-  width: 100%;
-  background: #0095F6;
-  color: #FFFFFF;
-  font-weight: 600;
-  font-size: 0.95rem;
-  padding: 0.85rem 1.25rem;
-  border-radius: 12px;
-  border: none;
-  cursor: pointer;
+/* ==========================================================================
+   Android Native-Style Location Permission Modal (Exact Screenshot Match)
+   ========================================================================== */
+
+.android-location-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
-  box-shadow: 0 4px 16px rgba(0, 149, 246, 0.4);
-  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  padding: 1.25rem;
+  animation: androidFadeIn 0.25s ease-out;
 }
 
-.blur-modal-btn:hover {
-  background: #1877F2;
-  box-shadow: 0 6px 22px rgba(0, 149, 246, 0.6);
-  transform: translateY(-1px);
+@keyframes androidFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.blur-modal-btn:active {
+.android-location-card {
+  background: #182222;
+  border-radius: 28px;
+  padding: 1.75rem 1.4rem 1.5rem;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  animation: androidPopIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.15);
+  user-select: none;
+}
+
+@keyframes androidPopIn {
+  from { transform: scale(0.9) translateY(16px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.android-location-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.android-location-icon-wrapper {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 50%;
+  background: #004D40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #80CBC4;
+}
+
+.android-location-title {
+  font-size: 1.02rem;
+  font-weight: 400;
+  color: #E0F2F1;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.android-location-title strong {
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.android-location-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.android-btn-primary {
+  width: 100%;
+  background: #004D40;
+  color: #E0F2F1;
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 0.9rem 1.25rem;
+  border-radius: 24px;
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.android-btn-primary:hover {
+  background: #005E50;
+}
+
+.android-btn-primary:active {
+  background: #006D5E;
   transform: scale(0.98);
 }
 
-.blur-modal-hint {
-  display: block;
-  margin-top: 0.9rem;
-  color: #737373;
-  font-size: 0.78rem;
-  font-weight: 500;
-}
-
-.blur-modal-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  text-align: left;
-  margin-bottom: 1.25rem;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 0.85rem;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.blur-modal-step-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.6rem;
-  font-size: 0.82rem;
-  color: #D1D5DB;
-  line-height: 1.35;
-}
-
-.step-num {
-  background: #0095F6;
-  color: #FFFFFF;
-  font-size: 0.7rem;
-  font-weight: 700;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-
-.blur-modal-btn-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.blur-modal-btn-secondary {
+.android-btn-secondary {
   width: 100%;
-  background: rgba(255, 255, 255, 0.12);
-  color: #FFFFFF;
-  font-weight: 600;
-  font-size: 0.9rem;
-  padding: 0.75rem 1.25rem;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #003630;
+  color: #80CBC4;
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 0.9rem 1.25rem;
+  border-radius: 24px;
+  border: none;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  transition: background 0.15s ease;
+  text-align: center;
+  transition: background 0.15s ease, transform 0.1s ease;
 }
 
-.blur-modal-btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.2);
+.android-btn-secondary:hover {
+  background: #00423B;
+  color: #E0F2F1;
+}
+
+.android-btn-secondary:active {
+  transform: scale(0.98);
 }
 
 /* ==========================================================================

