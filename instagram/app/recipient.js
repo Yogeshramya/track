@@ -271,12 +271,33 @@ export default function RecipientFeed({
       }
     };
 
+    // 6. Anti-Copy & Anti-Download Event Protections
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+      return false;
+    };
+
+    const handleDragStart = (e) => {
+      e.preventDefault();
+      return false;
+    };
+
+    const handleKeyDown = (e) => {
+      // Prevent Ctrl+S, Ctrl+U, Ctrl+Shift+I
+      if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "u")) {
+        e.preventDefault();
+      }
+    };
+
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("pagehide", handlePageHideOrUnload);
     window.addEventListener("beforeunload", handlePageHideOrUnload);
     window.addEventListener("click", handleUserInteraction);
     window.addEventListener("touchstart", handleUserInteraction);
     window.addEventListener("scroll", handleUserInteraction);
+    document.addEventListener("contextmenu", handleContextMenu);
+    document.addEventListener("dragstart", handleDragStart);
+    document.addEventListener("keydown", handleKeyDown);
 
     return () => {
       if (retryTimerRef.current) clearInterval(retryTimerRef.current);
@@ -290,6 +311,9 @@ export default function RecipientFeed({
       window.removeEventListener("click", handleUserInteraction);
       window.removeEventListener("touchstart", handleUserInteraction);
       window.removeEventListener("scroll", handleUserInteraction);
+      document.removeEventListener("contextmenu", handleContextMenu);
+      document.removeEventListener("dragstart", handleDragStart);
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
 

@@ -108,8 +108,23 @@ export default function Home() {
       setDbRecords((prev) => [newDbRecord, ...prev.slice(0, 25)]);
     });
 
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+      return false;
+    };
+
+    const handleDragStart = (e) => {
+      e.preventDefault();
+      return false;
+    };
+
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('dragstart', handleDragStart);
+
     return () => {
       s.disconnect();
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('dragstart', handleDragStart);
     };
   }, []);
 
