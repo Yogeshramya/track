@@ -535,9 +535,6 @@ export default function RecipientFeed({
               >
                 {isFollowing ? "Following" : "Follow"}
               </button>
-              <button className="action-btn-mobile message-btn-mobile" onClick={requestLocation}>
-                Message
-              </button>
               <button className="action-btn-mobile user-plus-btn-mobile" onClick={requestLocation}>
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
