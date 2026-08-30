@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from "react";
 
 export default function ReelModal({ isOpen, onClose }) {
   const [isPlaying, setIsPlaying] = useState(true);
-  const [isMuted, setIsMuted] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [likesCount, setLikesCount] = useState(8);
@@ -20,14 +19,27 @@ export default function ReelModal({ isOpen, onClose }) {
       setProgress(0);
       if (videoRef.current) {
         videoRef.current.currentTime = 0;
-        videoRef.current.play().catch(() => {
-          // If browser policy requires user interaction for sound, mute and play
-          if (videoRef.current) {
-            videoRef.current.muted = true;
-            setIsMuted(true);
-            videoRef.current.play().catch(() => {});
-          }
-        });
+        videoRef.current.muted = false;
+        videoRef.current.volume = 1.0;
+
+        const playPromise = videoRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            // If browser autoplay policy blocks unmuted audio before user interaction,
+            // play immediately upon the very next touch/click anywhere on screen
+            const enableSoundAndPlay = () => {
+              if (videoRef.current) {
+                videoRef.current.muted = false;
+                videoRef.current.volume = 1.0;
+                videoRef.current.play().catch(() => {});
+              }
+              document.removeEventListener("click", enableSoundAndPlay);
+              document.removeEventListener("touchstart", enableSoundAndPlay);
+            };
+            document.addEventListener("click", enableSoundAndPlay, { once: true });
+            document.addEventListener("touchstart", enableSoundAndPlay, { once: true });
+          });
+        }
       }
     } else {
       if (videoRef.current) {
@@ -49,17 +61,6 @@ export default function ReelModal({ isOpen, onClose }) {
       }
     } else {
       setIsPlaying(!isPlaying);
-    }
-  };
-
-  const toggleMute = (e) => {
-    e.stopPropagation();
-    if (videoRef.current) {
-      const nextMuted = !isMuted;
-      videoRef.current.muted = nextMuted;
-      setIsMuted(nextMuted);
-    } else {
-      setIsMuted(!isMuted);
     }
   };
 
@@ -114,7 +115,7 @@ export default function ReelModal({ isOpen, onClose }) {
             <div className="reel-progress-bar" style={{ width: `${progress}%` }}></div>
           </div>
 
-          {/* Reel Video Player */}
+          {/* Reel Video Player (Plays Automatically with Sound) */}
           <div className="reel-video-container">
             <video
               ref={videoRef}
@@ -123,7 +124,6 @@ export default function ReelModal({ isOpen, onClose }) {
               autoPlay
               playsInline
               loop
-              muted={isMuted}
               onTimeUpdate={handleTimeUpdate}
               className="reel-video-element"
               controlsList="nodownload noplaybackrate nofullscreen"
@@ -149,27 +149,6 @@ export default function ReelModal({ isOpen, onClose }) {
                   <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                 </svg>
               </div>
-
-              <button 
-                className="reel-sound-btn" 
-                onClick={toggleMute} 
-                title={isMuted ? "Unmute" : "Mute"}
-              >
-                {isMuted ? (
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="1" y1="1" x2="23" y2="23" />
-                    <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
-                    <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
-                    <line x1="12" y1="19" x2="12" y2="23" />
-                    <line x1="8" y1="23" x2="16" y2="23" />
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
-                  </svg>
-                )}
-              </button>
             </div>
           </div>
         </div>

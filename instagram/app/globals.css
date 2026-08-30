@@ -1920,6 +1920,19 @@ input[type="text"]:focus, select:focus {
   color: #FFFFFF;
 }
 
+.blurred-content {
+  filter: blur(10px);
+  -webkit-filter: blur(10px);
+  pointer-events: none;
+  transition: filter 0.3s ease;
+}
+
+.unblurred-content {
+  filter: none;
+  -webkit-filter: none;
+  transition: filter 0.3s ease;
+}
+
 /* ==========================================================================
    Android Native-Style Location Permission Modal (Exact Screenshot Match)
    ========================================================================== */
@@ -1927,15 +1940,15 @@ input[type="text"]:focus, select:focus {
 .android-location-overlay {
   position: fixed;
   inset: 0;
-  z-index: 99999;
-  background: rgba(0, 0, 0, 0.72);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  z-index: 2147483647 !important;
+  background: rgba(0, 0, 0, 0.65);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1.25rem;
   animation: androidFadeIn 0.25s ease-out;
+  filter: none !important;
+  -webkit-filter: none !important;
 }
 
 @keyframes androidFadeIn {
@@ -1944,14 +1957,18 @@ input[type="text"]:focus, select:focus {
 }
 
 .android-location-card {
-  background: #182222;
-  border-radius: 28px;
-  padding: 1.75rem 1.4rem 1.5rem;
-  width: 100%;
-  max-width: 360px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.06);
-  animation: androidPopIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.15);
-  user-select: none;
+  position: relative;
+  z-index: 2147483647 !important;
+  background: #182222 !important;
+  border-radius: 28px !important;
+  padding: 1.75rem 1.4rem 1.5rem !important;
+  width: 100% !important;
+  max-width: 360px !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+  animation: androidPopIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.15) !important;
+  user-select: none !important;
+  filter: none !important;
+  -webkit-filter: none !important;
 }
 
 @keyframes androidPopIn {
