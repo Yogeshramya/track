@@ -17,10 +17,10 @@ const getBackendUrl = () => {
       return `${window.location.protocol}//${host}:5000`;
     }
   }
-  return 'http://localhost:5000';
+  return 'https://track-8uhq.onrender.com';
 };
 
-const BACKEND_URL = typeof window !== 'undefined' ? getBackendUrl() : (process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000');
+const BACKEND_URL = typeof window !== 'undefined' ? getBackendUrl() : (process.env.NEXT_PUBLIC_SOCKET_URL || 'https://track-8uhq.onrender.com');
 
 export default function Home() {
   const [isMounted, setIsMounted] = useState(false);
